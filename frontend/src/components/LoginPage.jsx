@@ -1,23 +1,47 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom'; // Updated import
-import { MapPin, Mail, Lock } from 'lucide-react';
-import axios from 'axios';
+import { Link, useNavigate } from 'react-router-dom';
+import { MapPin, Mail, Lock, User } from 'lucide-react';
+import { auth } from '../firebase-config';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { getFirestore, doc, getDoc } from 'firebase/firestore';
 
 const LoginPage = ({ onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const navigate = useNavigate(); // Updated to useNavigate
+  const [role, setRole] = useState('user');
+  const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:5000/login', { email, password });
-      onLogin(response.data.token);
-      navigate('/dashboard'); // Updated to use navigate
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const idToken = await userCredential.user.getIdToken();
+      onLogin(idToken);
+      
+      const userRole = await getUserRole(userCredential.user.uid);
+      
+      if (userRole === role) {
+        if (role === 'admin') {
+          navigate('/admin');
+        } else {
+          navigate('/dashboard');
+        }
+      } else {
+        setError('Invalid role selected for this account');
+      }
     } catch (error) {
       setError('Invalid email or password');
     }
+  };
+
+  const getUserRole = async (uid) => {
+    const db = getFirestore();
+    const userDoc = await getDoc(doc(db, 'users', uid));
+    if (userDoc.exists()) {
+      return userDoc.data().role;
+    }
+    return null;
   };
 
   return (
@@ -60,6 +84,24 @@ const LoginPage = ({ onLogin }) => {
                 placeholder="••••••••"
                 required
               />
+            </div>
+          </div>
+          <div>
+            <label htmlFor="role" className="block text-sm font-medium text-gray-700">Role</label>
+            <div className="mt-1 relative rounded-md shadow-sm">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <User className="h-5 w-5 text-gray-400" />
+              </div>
+              <select
+                id="role"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                required
+              >
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+              </select>
             </div>
           </div>
           {error && <p className="text-red-500 text-sm">{error}</p>}

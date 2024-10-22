@@ -9,14 +9,13 @@ import { getAuth } from "firebase/auth"; // For Authentication
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyC-1CYR3nfYrZpVnPAiOWncQsDyaBCcyLo",
-  authDomain: "traceit-748af.firebaseapp.com",
-  databaseURL: "https://traceit-748af-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "traceit-748af",
-  storageBucket: "traceit-748af.appspot.com",
-  messagingSenderId: "627276895467",
-  appId: "1:627276895467:web:71994dd967209bb2221aae",
-  measurementId: "G-S73RV4M9PG"
+  apiKey: "AIzaSyDDwFNiXmdl_GpONc4KyhNRYL29PGOL8Nk",
+  authDomain: "trace-it-1655d.firebaseapp.com",
+  projectId: "trace-it-1655d",
+  storageBucket: "trace-it-1655d.appspot.com",
+  messagingSenderId: "712930538260",
+  appId: "1:712930538260:web:4fc9a5afd597fea2604801",
+  measurementId: "G-2XL02H8PJX"
 };
 
 // Initialize Firebase

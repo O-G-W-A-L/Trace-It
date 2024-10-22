@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from './firebase-config';
+import { getFirestore, doc, getDoc } from 'firebase/firestore';
 import LandingPage from './components/LandingPage';
 import LoginPage from './components/LoginPage';
 import RegisterPage from './components/RegisterPage';
@@ -8,17 +11,45 @@ import AdminDashboard from './components/AdminDashboard';
 import ItemDetail from './components/ItemDetail';
 
 const App = () => {
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [user, setUser] = useState(null);
+  const [userRole, setUserRole] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const handleLogin = (newToken) => {
-    setToken(newToken);
-    localStorage.setItem('token', newToken);
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        const role = await getUserRole(currentUser.uid);
+        setUserRole(role);
+      } else {
+        setUserRole(null);
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const getUserRole = async (uid) => {
+    const db = getFirestore();
+    const userDoc = await getDoc(doc(db, 'users', uid));
+    if (userDoc.exists()) {
+      return userDoc.data().role;
+    }
+    return null;
+  };
+
+  const handleLogin = (token) => {
+    console.log('User logged in with token:', token);
   };
 
   const handleLogout = () => {
-    setToken(null);
-    localStorage.removeItem('token');
+    auth.signOut();
   };
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <Router>
@@ -29,15 +60,23 @@ const App = () => {
           <Route path="/register" element={<RegisterPage />} />
           <Route 
             path="/dashboard" 
-            element={token ? <UserDashboard onLogout={handleLogout} /> : <Navigate to="/login" />} 
+            element={
+              user && userRole === 'user' 
+                ? <UserDashboard onLogout={handleLogout} /> 
+                : <Navigate to="/login" />
+            } 
           />
           <Route 
             path="/admin" 
-            element={token ? <AdminDashboard onLogout={handleLogout} /> : <Navigate to="/login" />} 
+            element={
+              user && userRole === 'admin' 
+                ? <AdminDashboard onLogout={handleLogout} /> 
+                : <Navigate to="/login" />
+            } 
           />
           <Route 
             path="/item/:id" 
-            element={token ? <ItemDetail /> : <Navigate to="/login" />} 
+            element={user ? <ItemDetail /> : <Navigate to="/login" />} 
           />
         </Routes>
       </div>

@@ -1,23 +1,37 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { MapPin, Mail, Lock, User } from 'lucide-react';
-import axios from 'axios';
+import { auth } from '../firebase-config';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { getFirestore, doc, setDoc } from 'firebase/firestore';
 
 const RegisterPage = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState('user');
   const [error, setError] = useState('');
-  const navigate = useNavigate(); // Updated to useNavigate
+  const navigate = useNavigate();
 
   const handleRegister = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/register', { name, email, password });
-      navigate('/login'); // Updated to use navigate
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(userCredential.user, { displayName: name });
+      
+      await saveUserRole(userCredential.user.uid, role);
+      
+      navigate('/login');
     } catch (error) {
-      setError('Error registering user');
+      setError(error.message);
     }
+  };
+
+  const saveUserRole = async (uid, role) => {
+    const db = getFirestore();
+    await setDoc(doc(db, 'users', uid), {
+      role: role
+    });
   };
 
   return (
@@ -77,6 +91,24 @@ const RegisterPage = () => {
                 placeholder="••••••••"
                 required
               />
+            </div>
+          </div>
+          <div>
+            <label htmlFor="role" className="block text-sm font-medium text-gray-700">Role</label>
+            <div className="mt-1 relative rounded-md shadow-sm">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <User className="h-5 w-5 text-gray-400" />
+              </div>
+              <select
+                id="role"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                required
+              >
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+              </select>
             </div>
           </div>
           {error && <p className="text-red-500 text-sm">{error}</p>}
