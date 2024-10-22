@@ -9,6 +9,7 @@ import RegisterPage from './components/RegisterPage';
 import UserDashboard from './components/UserDashboard';
 import AdminDashboard from './components/AdminDashboard';
 import ItemDetail from './components/ItemDetail';
+import './index.css';
 
 const App = () => {
   const [user, setUser] = useState(null);
