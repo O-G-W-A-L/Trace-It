@@ -1,5 +1,7 @@
+// AdminDashboard.jsx
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { db } from '../firebase/config';
 import Sidebar from './Sidebar';
 import ItemManagement from './ItemManagement';
 import UserManagement from './UserManagement';
@@ -23,47 +25,38 @@ const AdminDashboard = ({ onLogout }) => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [itemsResponse, usersResponse, messagesResponse] = await Promise.all([
-        axios.get('http://localhost:5000/items', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        }),
-        axios.get('http://localhost:5000/users', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        }),
-        axios.get('http://localhost:5000/messages', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        })
-      ]);
+      // Fetch items
+      const itemsQuery = query(collection(db, 'items'), orderBy('dateFound', 'desc'));
+      const itemsSnapshot = await getDocs(itemsQuery);
+      const itemsData = itemsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setItems(itemsData);
 
-      setItems(itemsResponse.data);
-      setUsers(usersResponse.data);
-      setMessages(messagesResponse.data);
+      // Fetch users
+      const usersQuery = query(collection(db, 'users'));
+      const usersSnapshot = await getDocs(usersQuery);
+      const usersData = usersSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setUsers(usersData);
+
+      // Fetch messages
+      const messagesQuery = query(collection(db, 'messages'), orderBy('timestamp', 'desc'));
+      const messagesSnapshot = await getDocs(messagesQuery);
+      const messagesData = messagesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setMessages(messagesData);
+
       setIsLoading(false);
     } catch (error) {
       console.error('Error fetching data:', error);
       showToast('Error fetching data. Please try again.', 'error');
       setIsLoading(false);
-    }
-  };
-
-  const handleAddItem = async (newItem) => {
-    try {
-      const formData = new FormData();
-      for (const key in newItem) {
-        formData.append(key, newItem[key]);
-      }
-      await axios.post('http://localhost:5000/items', formData, {
-        headers: { 
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-      fetchData();
-      setIsAddItemModalOpen(false);
-      showToast('Item added successfully', 'success');
-    } catch (error) {
-      console.error('Error adding item:', error);
-      showToast('Failed to add item. Please try again.', 'error');
     }
   };
 
@@ -112,7 +105,8 @@ const AdminDashboard = ({ onLogout }) => {
                 {activeTab === 'items' && (
                   <ItemManagement 
                     items={items} 
-                    onAddItem={() => setIsAddItemModalOpen(true)} 
+                    onAddItem={() => setIsAddItemModalOpen(true)}
+                    onRefresh={fetchData}
                   />
                 )}
                 {activeTab === 'users' && <UserManagement users={users} fetchData={fetchData} showToast={showToast} />}
@@ -133,7 +127,8 @@ const AdminDashboard = ({ onLogout }) => {
         <AddItemModal 
           isOpen={isAddItemModalOpen} 
           onClose={() => setIsAddItemModalOpen(false)} 
-          onAddItem={handleAddItem}
+          onAddItem={fetchData}
+          showToast={showToast}
         />
       )}
       {toast && (

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { MapPin, Truck, MessageCircle } from 'lucide-react';
-import axios from 'axios';
+import { db } from '../firebase/config'; // Import your Firebase database
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 const regions = [
   { id: 'northern', name: 'Northern Region' },
@@ -18,10 +19,14 @@ const ItemDetail = () => {
   useEffect(() => {
     const fetchItem = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/items/${id}`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        });
-        setItem(response.data);
+        const docRef = doc(db, 'items', id); // Adjust the collection name as per your Firestore structure
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+          setItem(docSnap.data());
+        } else {
+          console.error('No such document!');
+        }
       } catch (error) {
         console.error('Error fetching item:', error);
       }
@@ -31,9 +36,8 @@ const ItemDetail = () => {
 
   const handleDeliveryRequest = async () => {
     try {
-      await axios.post(`http://localhost:5000/items/${id}/delivery`, { region: selectedRegion }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+      const deliveryRequestRef = doc(db, 'deliveryRequests', id); // Adjust as needed
+      await setDoc(deliveryRequestRef, { region: selectedRegion });
       alert('Delivery request submitted successfully!');
     } catch (error) {
       console.error('Error requesting delivery:', error);
