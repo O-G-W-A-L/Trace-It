@@ -21,6 +21,12 @@ const AdminDashboard = ({ onLogout }) => {
     fetchData();
   }, []);
 
+  // Handle tab changes
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    fetchData(); // Refresh data when switching tabs
+  };
+
   const fetchData = async () => {
     setIsLoading(true);
     try {
@@ -64,9 +70,41 @@ const AdminDashboard = ({ onLogout }) => {
     setTimeout(() => setToast(null), 3000);
   };
 
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'items':
+        return (
+          <ItemManagement 
+            items={items} 
+            onAddItem={() => setIsAddItemModalOpen(true)}
+            onRefresh={fetchData}
+          />
+        );
+      case 'users':
+        return (
+          <UserManagement 
+            users={users} 
+            fetchData={fetchData} 
+            showToast={showToast}
+          />
+        );
+      case 'messages':
+        return (
+          <MessageManagement 
+            messages={messages} 
+            users={users} 
+            fetchData={fetchData} 
+            showToast={showToast}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="flex h-screen bg-gray-100">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <Sidebar activeTab={activeTab} setActiveTab={handleTabChange} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <nav className="bg-white shadow-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -100,28 +138,12 @@ const AdminDashboard = ({ onLogout }) => {
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
               </div>
             ) : (
-              <>
-                {activeTab === 'items' && (
-                  <ItemManagement 
-                    items={items} 
-                    onAddItem={() => setIsAddItemModalOpen(true)}
-                    onRefresh={fetchData}
-                  />
-                )}
-                {activeTab === 'users' && <UserManagement users={users} fetchData={fetchData} showToast={showToast} />}
-                {activeTab === 'messages' && (
-                  <MessageManagement 
-                    messages={messages} 
-                    users={users} 
-                    fetchData={fetchData} 
-                    showToast={showToast}
-                  />
-                )}
-              </>
+              renderContent()
             )}
           </div>
         </main>
       </div>
+      
       {isAddItemModalOpen && (
         <AddItemModal 
           isOpen={isAddItemModalOpen} 
@@ -130,6 +152,7 @@ const AdminDashboard = ({ onLogout }) => {
           showToast={showToast}
         />
       )}
+      
       {toast && (
         <div className={`fixed bottom-4 right-4 px-4 py-2 rounded-md text-white ${
           toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'
