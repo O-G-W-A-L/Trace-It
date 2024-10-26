@@ -9,6 +9,7 @@ import RegisterPage from './components/RegisterPage';
 import UserDashboard from './components/UserDashboard';
 import AdminDashboard from './components/AdminDashboard';
 import ItemDetail from './components/ItemDetail';
+import UserProfile from './components/UserProfile';
 import './index.css';
 
 const App = () => {
@@ -63,8 +64,14 @@ const App = () => {
             path="/dashboard" 
             element={
               user && userRole === 'user' 
-                ? <UserDashboard onLogout={handleLogout} /> 
+                ? <UserDashboard user={user} onLogout={handleLogout} /> 
                 : <Navigate to="/login" />
+            } 
+          />
+          <Route 
+            path="/profile" 
+            element={
+              user ? <UserProfile user={user} /> : <Navigate to="/login" />
             } 
           />
           <Route 
