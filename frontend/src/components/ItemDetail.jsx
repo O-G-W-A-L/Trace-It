@@ -1,144 +1,259 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { MapPin, Truck, MessageCircle } from 'lucide-react';
-import { db } from '../firebase/config'; // Import your Firebase database
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { useParams, useNavigate } from 'react-router-dom';
+import { MapPin, MessageCircle, ArrowLeft } from 'lucide-react';
+import { 
+  doc, 
+  getDoc, 
+  updateDoc, 
+  collection, 
+  addDoc, 
+  serverTimestamp,
+  arrayUnion 
+} from 'firebase/firestore';
+import { db } from '../firebase/config';
 
-const regions = [
-  { id: 'northern', name: 'Northern Region' },
-  { id: 'eastern', name: 'Eastern Region' },
-  { id: 'southern', name: 'Southern Region' },
-  { id: 'western', name: 'Western Region' },
-];
-
-const ItemDetail = () => {
+const ItemDetail = ({ currentUser }) => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [item, setItem] = useState(null);
-  const [selectedRegion, setSelectedRegion] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [showClaimForm, setShowClaimForm] = useState(false);
+  const [claimDetails, setClaimDetails] = useState({
+    identificationDetails: '',
+    contactInformation: '',
+    additionalNotes: ''
+  });
+  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     const fetchItem = async () => {
       try {
-        const docRef = doc(db, 'items', id); // Adjust the collection name as per your Firestore structure
+        const docRef = doc(db, 'items', id);
         const docSnap = await getDoc(docRef);
         
         if (docSnap.exists()) {
-          setItem(docSnap.data());
-        } else {
-          console.error('No such document!');
+          setItem({ id: docSnap.id, ...docSnap.data() });
         }
       } catch (error) {
-        console.error('Error fetching item:', error);
+        console.error('Error:', error);
+        showToast('Error loading item', 'error');
+      } finally {
+        setIsLoading(false);
       }
     };
+
     fetchItem();
   }, [id]);
 
-  const handleDeliveryRequest = async () => {
+  const showToast = (message, type) => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleClaimSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+
     try {
-      const deliveryRequestRef = doc(db, 'deliveryRequests', id); // Adjust as needed
-      await setDoc(deliveryRequestRef, { region: selectedRegion });
-      alert('Delivery request submitted successfully!');
+      const claim = {
+        userId: currentUser.uid,
+        userEmail: currentUser.email,
+        itemId: id,
+        status: 'pending',
+        timestamp: serverTimestamp(),
+        ...claimDetails
+      };
+
+      const claimRef = await addDoc(collection(db, 'claims'), claim);
+
+      await updateDoc(doc(db, 'items', id), {
+        claims: arrayUnion(claimRef.id),
+        status: 'pending_claim'
+      });
+
+      await addDoc(collection(db, 'notifications'), {
+        type: 'new_claim',
+        itemId: id,
+        claimId: claimRef.id,
+        userId: currentUser.uid,
+        timestamp: serverTimestamp(),
+        read: false
+      });
+
+      showToast('Claim submitted successfully', 'success');
+      setShowClaimForm(false);
+      
+      // Refresh item details
+      const updatedDoc = await getDoc(doc(db, 'items', id));
+      if (updatedDoc.exists()) {
+        setItem({ id: updatedDoc.id, ...updatedDoc.data() });
+      }
     } catch (error) {
-      console.error('Error requesting delivery:', error);
-      alert('Error submitting delivery request');
+      console.error('Error:', error);
+      showToast('Error submitting claim', 'error');
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
   if (!item) {
-    return <div>Loading...</div>;
+    return (
+      <div className="text-center p-4">
+        <p>Item not found</p>
+        <button onClick={() => navigate('/dashboard')}>Back to Dashboard</button>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex">
-              <div className="flex-shrink-0 flex items-center">
-                <MapPin className="h-8 w-8 text-indigo-600" />
-                <span className="ml-2 text-2xl font-bold text-gray-800">TraceIt</span>
-              </div>
+    <div className="max-w-4xl mx-auto p-4">
+      {toast && (
+        <div className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg ${
+          toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+        } text-white`}>
+          {toast.message}
+        </div>
+      )}
+
+      <button
+        onClick={() => navigate('/dashboard')}
+        className="flex items-center mb-4"
+      >
+        <ArrowLeft className="w-5 h-5 mr-2" />
+        Back
+      </button>
+
+      <div className="bg-white rounded-lg shadow p-6">
+        {item.imageUrl && (
+          <img
+            src={item.imageUrl}
+            alt={item.name}
+            className="w-full h-64 object-cover rounded-lg mb-4"
+          />
+        )}
+
+        <div className="flex justify-between items-start mb-4">
+          <h1 className="text-2xl font-bold">{item.name}</h1>
+          <span className={`px-2 py-1 rounded ${
+            item.status === 'unclaimed' 
+              ? 'bg-green-100 text-green-800' 
+              : 'bg-yellow-100 text-yellow-800'
+          }`}>
+            {item.status}
+          </span>
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex items-start">
+            <MapPin className="w-5 h-5 mt-1 mr-2" />
+            <div>
+              <p className="font-medium">Location</p>
+              <p className="text-gray-600">{item.location}</p>
+            </div>
+          </div>
+
+          <div className="flex items-start">
+            <MessageCircle className="w-5 h-5 mt-1 mr-2" />
+            <div>
+              <p className="font-medium">Details</p>
+              <p className="text-gray-600">{item.details}</p>
             </div>
           </div>
         </div>
-      </nav>
 
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-            <div className="px-4 py-5 sm:px-6">
-              <h3 className="text-lg leading-6 font-medium text-gray-900">Item Details</h3>
-              <p className="mt-1 max-w-2xl text-sm text-gray-500">Information about the found item.</p>
-            </div>
-            <div className="border-t border-gray-200 px-4 py-5 sm:p-0">
-              <dl className="sm:divide-y sm:divide-gray-200">
-                <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Item Type</dt>
-                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{item.type}</dd>
-                </div>
-                <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Name</dt>
-                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{item.name}</dd>
-                </div>
-                <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Details</dt>
-                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{item.details}</dd>
-                </div>
-                <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Found Location</dt>
-                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{item.location}</dd>
-                </div>
-              </dl>
-            </div>
-          </div>
+        {item.status === 'unclaimed' && (
+          <button
+            onClick={() => setShowClaimForm(true)}
+            className="w-full mt-6 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition-colors"
+          >
+            Claim This Item
+          </button>
+        )}
 
-          <div className="mt-8 bg-white shadow overflow-hidden sm:rounded-lg">
-            <div className="px-4 py-5 sm:px-6">
-              <h3 className="text-lg leading-6 font-medium text-gray-900">Delivery Options</h3>
-              <p className="mt-1 max-w-2xl text-sm text-gray-500">Choose your delivery region.</p>
-            </div>
-            <div className="border-t border-gray-200 px-4 py-5 sm:p-0">
-              <div className="sm:p-6">
-                <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
-                  {regions.map((region) => (
-                    <div key={region.id} className="flex items-center">
-                      <input
-                        id={region.id}
-                        name="region"
-                        type="radio"
-                        value={region.id}
-                        checked={selectedRegion === region.id}
-                        onChange={() => setSelectedRegion(region.id)}
-                        className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300"
-                      />
-                      <label htmlFor={region.id} className="ml-3 block text-sm font-medium text-gray-700">
-                        {region.name}
-                      </label>
-                    </div>
-                  ))}
+        {showClaimForm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full">
+              <h2 className="text-xl font-bold mb-4">Claim Form</h2>
+              <form onSubmit={handleClaimSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Identification Details
+                  </label>
+                  <textarea
+                    required
+                    className="w-full border rounded p-2"
+                    rows="3"
+                    placeholder="Provide details to prove ownership..."
+                    value={claimDetails.identificationDetails}
+                    onChange={(e) => setClaimDetails({
+                      ...claimDetails,
+                      identificationDetails: e.target.value
+                    })}
+                  />
                 </div>
-                <div className="mt-6">
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Contact Information
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full border rounded p-2"
+                    placeholder="Phone number or alternative contact..."
+                    value={claimDetails.contactInformation}
+                    onChange={(e) => setClaimDetails({
+                      ...claimDetails,
+                      contactInformation: e.target.value
+                    })}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Additional Notes
+                  </label>
+                  <textarea
+                    className="w-full border rounded p-2"
+                    rows="2"
+                    placeholder="Any additional information..."
+                    value={claimDetails.additionalNotes}
+                    onChange={(e) => setClaimDetails({
+                      ...claimDetails,
+                      additionalNotes: e.target.value
+                    })}
+                  />
+                </div>
+
+                <div className="flex justify-end space-x-3">
                   <button
-                    onClick={handleDeliveryRequest}
-                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    type="button"
+                    onClick={() => setShowClaimForm(false)}
+                    className="px-4 py-2 border rounded text-gray-600 hover:bg-gray-50"
                   >
-                    <Truck className="h-5 w-5 mr-2" />
-                    Request Delivery
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+                  >
+                    {isLoading ? 'Submitting...' : 'Submit Claim'}
                   </button>
                 </div>
-              </div>
+              </form>
             </div>
           </div>
-
-          <div className="mt-8">
-            <button className="flex items-center justify-center w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-indigo-600 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-              <MessageCircle className="h-5 w-5 mr-2" />
-              Contact Admin
-            </button>
-          </div>
-        </div>
-      </main>
+        )}
+      </div>
     </div>
   );
 };

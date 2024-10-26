@@ -77,7 +77,7 @@ const App = () => {
           />
           <Route 
             path="/item/:id" 
-            element={user ? <ItemDetail /> : <Navigate to="/login" />} 
+            element={user ? <ItemDetail currentUser={user} /> : <Navigate to="/login" />} 
           />
         </Routes>
       </div>
