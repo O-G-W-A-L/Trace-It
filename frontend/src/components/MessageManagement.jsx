@@ -1,33 +1,51 @@
-// MessageManagement.jsx
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase/config';
 
 const MessageManagement = ({ messages, users, fetchData, showToast }) => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [newMessage, setNewMessage] = useState('');
+  const [localMessages, setLocalMessages] = useState(messages);
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [localMessages]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
     
-    if (!newMessage.trim()) {
-      showToast('Please enter a message', 'error');
+    if (!newMessage.trim() || !selectedUser) {
+      showToast('Please select a user and enter a message', 'error');
       return;
     }
 
     try {
-      await addDoc(collection(db, 'messages'), {
+      const newMessageData = {
         content: newMessage.trim(),
-        recipientId: selectedUser ? selectedUser.id : 'all',
+        senderEmail: 'admin@example.com',
+        recipientEmail: selectedUser.email,
         sender: 'Admin',
+        recipient: 'User',
+        timestamp: new Date(),
+      };
+
+      const docRef = await addDoc(collection(db, 'messages'), {
+        ...newMessageData,
         timestamp: serverTimestamp(),
-        recipientName: selectedUser ? selectedUser.name : 'All Users',
-        senderName: 'Admin' // Adding sender name explicitly
       });
+
+      setLocalMessages(prevMessages => [...prevMessages, { 
+        ...newMessageData, 
+        id: docRef.id
+      }]);
       
       setNewMessage('');
-      fetchData();
-      showToast(`Message sent to ${selectedUser ? selectedUser.name : 'all users'}`, 'success');
+      scrollToBottom();
     } catch (error) {
       console.error('Error sending message:', error);
       showToast('Failed to send message. Please try again.', 'error');
@@ -36,7 +54,8 @@ const MessageManagement = ({ messages, users, fetchData, showToast }) => {
 
   const formatTimestamp = (timestamp) => {
     if (!timestamp) return '';
-    return timestamp.toDate().toLocaleString('en-US', {
+    const date = timestamp instanceof Date ? timestamp : timestamp.toDate();
+    return date.toLocaleString('en-US', {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
@@ -44,19 +63,18 @@ const MessageManagement = ({ messages, users, fetchData, showToast }) => {
     });
   };
 
+  const sortedMessages = [...localMessages].sort((a, b) => {
+    if (!a.timestamp || !b.timestamp) return 0;
+    const dateA = a.timestamp instanceof Date ? a.timestamp : a.timestamp.toDate();
+    const dateB = b.timestamp instanceof Date ? b.timestamp : b.timestamp.toDate();
+    return dateB - dateA;
+  });
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       <div className="bg-white shadow-md rounded-lg overflow-hidden">
         <div className="p-4 border-b bg-gray-50">
           <h3 className="text-lg font-semibold">Users</h3>
-          <div 
-            className={`mt-2 cursor-pointer p-2 rounded ${
-              !selectedUser ? 'bg-blue-100' : 'hover:bg-gray-100'
-            }`}
-            onClick={() => setSelectedUser(null)}
-          >
-            <p className="font-semibold">All Users</p>
-          </div>
         </div>
         <div className="overflow-y-auto h-[calc(100vh-300px)]">
           {users.map((user) => (
@@ -67,13 +85,23 @@ const MessageManagement = ({ messages, users, fetchData, showToast }) => {
               }`}
               onClick={() => setSelectedUser(user)}
             >
-              <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center mr-3">
-                <span className="text-white font-medium text-sm">
-                  {user.name?.charAt(0).toUpperCase() || '?'}
-                </span>
+              <div className="w-10 h-10 rounded-full flex items-center justify-center mr-3">
+                {user.profileImageUrl ? (
+                  <img 
+                    src={user.profileImageUrl} 
+                    alt={user.fullName} 
+                    className="h-10 w-10 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center">
+                    <span className="text-white font-medium text-sm">
+                      {user.fullName?.charAt(0).toUpperCase() || '?'}
+                    </span>
+                  </div>
+                )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold truncate">{user.name || 'Unnamed User'}</p>
+                <p className="font-semibold truncate">{user.fullName || 'Unnamed User'}</p>
                 <p className="text-sm text-gray-500 truncate">{user.email || 'No email'}</p>
               </div>
             </div>
@@ -83,29 +111,27 @@ const MessageManagement = ({ messages, users, fetchData, showToast }) => {
       <div className="bg-white shadow-md rounded-lg overflow-hidden md:col-span-2">
         <div className="p-4 border-b bg-gray-50">
           <h3 className="text-lg font-semibold">
-            {selectedUser ? `Messaging ${selectedUser.name}` : 'Messaging All Users'}
+            {selectedUser ? `Chat with ${selectedUser.fullName}` : 'Select a user to start messaging'}
           </h3>
         </div>
-        <div className="overflow-y-auto h-[calc(100vh-400px)] p-4 space-y-4">
-          {messages
-            .filter(msg => !selectedUser || msg.recipientId === selectedUser.id || msg.recipientId === 'all')
+        <div className="flex flex-col-reverse overflow-y-auto h-[calc(100vh-400px)] p-4">
+          <div ref={messagesEndRef} />
+          {sortedMessages
+            .filter(msg => 
+              selectedUser && (
+                (msg.senderEmail === selectedUser.email && msg.recipientEmail === 'admin@example.com') ||
+                (msg.senderEmail === 'admin@example.com' && msg.recipientEmail === selectedUser.email)
+              )
+            )
             .map((message) => (
-              <div key={message.id} className={`flex ${message.sender === 'Admin' ? 'justify-end' : 'justify-start'}`}>
+              <div key={message.id} className={`flex ${message.sender === 'Admin' ? 'justify-end' : 'justify-start'} mb-4`}>
                 <div className={`max-w-[70%] rounded-lg p-3 ${
                   message.sender === 'Admin' 
                     ? 'bg-blue-100 text-blue-900' 
                     : 'bg-gray-100 text-gray-900'
                 }`}>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-sm">
-                      {message.sender === 'Admin' ? 'You' : message.senderName || 'User'}
-                    </span>
-                    {message.recipientId === 'all' && (
-                      <span className="text-xs bg-gray-200 px-2 py-1 rounded">All Users</span>
-                    )}
-                  </div>
-                  <p className="mt-1">{message.content}</p>
-                  <p className="text-xs mt-1 opacity-70">
+                  <p className="text-base">{message.content}</p>
+                  <p className="text-xs mt-2 opacity-70">
                     {formatTimestamp(message.timestamp)}
                   </p>
                 </div>
@@ -118,13 +144,14 @@ const MessageManagement = ({ messages, users, fetchData, showToast }) => {
               type="text"
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
-              placeholder={`Message ${selectedUser ? selectedUser.name : 'all users'}...`}
-              className="flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder={selectedUser ? `Message ${selectedUser.fullName}...` : 'Select a user to message'}
+              disabled={!selectedUser}
+              className="flex-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <button
               type="submit"
-              disabled={!newMessage.trim()}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed transition duration-150"
+              disabled={!newMessage.trim() || !selectedUser}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed transition duration-150"
             >
               Send
             </button>
