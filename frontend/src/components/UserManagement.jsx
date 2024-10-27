@@ -28,7 +28,6 @@ const UserManagement = ({ users, fetchData, showToast }) => {
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User Info</th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Profile Details</th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact Details</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
@@ -38,21 +37,21 @@ const UserManagement = ({ users, fetchData, showToast }) => {
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-10 w-10">
-                      {user.profileImage ? (
+                      {user.profileImageUrl ? (
                         <img 
-                          src={user.profileImage} 
-                          alt={user.name} 
+                          src={user.profileImageUrl} 
+                          alt={user.fullName} 
                           className="h-10 w-10 rounded-full object-cover"
                         />
                       ) : (
                         <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold">
-                          {displayUserInfo(user.name)?.charAt(0).toUpperCase()}
+                          {displayUserInfo(user.fullName)?.charAt(0).toUpperCase()}
                         </div>
                       )}
                     </div>
                     <div className="ml-4">
                       <div className="text-sm font-medium text-gray-900">
-                        {displayUserInfo(user.name)}
+                        {displayUserInfo(user.fullName)}
                       </div>
                       <div className="text-sm text-gray-500">
                         ID: {user.id?.slice(0, 8)}...
@@ -62,8 +61,7 @@ const UserManagement = ({ users, fetchData, showToast }) => {
                 </td>
                 <td className="px-6 py-4">
                   <div className="text-sm text-gray-900">
-                    <div>Location: {displayUserInfo(user.location)}</div>
-                    <div>Age: {displayUserInfo(user.age)}</div>
+                    <div>Address: {displayUserInfo(user.address)}</div>
                     <div>Gender: {displayUserInfo(user.gender)}</div>
                   </div>
                 </td>
@@ -71,17 +69,6 @@ const UserManagement = ({ users, fetchData, showToast }) => {
                   <div className="text-sm text-gray-900">
                     <div>Email: {displayUserInfo(user.email)}</div>
                     <div>Phone: {displayUserInfo(user.phone)}</div>
-                    <div>Alternative Contact: {displayUserInfo(user.alternativeContact)}</div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'
-                  }`}>
-                    {displayUserInfo(user.role)}
-                  </span>
-                  <div className="text-xs text-gray-500 mt-1">
-                    Joined: {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
