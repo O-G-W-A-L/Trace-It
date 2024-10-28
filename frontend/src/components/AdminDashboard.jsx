@@ -6,61 +6,44 @@ import ItemManagement from './ItemManagement';
 import UserManagement from './UserManagement';
 import MessageManagement from './MessageManagement';
 import AddItemModal from './AddItemModal';
-import { LogOut, MapPin } from 'lucide-react';
+import { LogOut, MapPin, Menu, X } from 'lucide-react';
 
 const AdminDashboard = ({ onLogout }) => {
   const [activeTab, setActiveTab] = useState('items');
-  const [items, setItems] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [messages, setMessages] = useState([]);
+  const [data, setData] = useState({ items: [], users: [], messages: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
   const [toast, setToast] = useState(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     fetchData();
   }, []);
 
-  // Handle tab changes
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    fetchData(); // Refresh data when switching tabs
+    setIsMobileMenuOpen(false);
   };
 
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      // Fetch items
-      const itemsQuery = query(collection(db, 'items'), orderBy('dateFound', 'desc'));
-      const itemsSnapshot = await getDocs(itemsQuery);
-      const itemsData = itemsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setItems(itemsData);
-
-      // Fetch users
-      const usersQuery = query(collection(db, 'users'));
-      const usersSnapshot = await getDocs(usersQuery);
-      const usersData = usersSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setUsers(usersData);
-
-      // Fetch messages
-      const messagesQuery = query(collection(db, 'messages'), orderBy('timestamp', 'desc'));
-      const messagesSnapshot = await getDocs(messagesQuery);
-      const messagesData = messagesSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setMessages(messagesData);
-
-      setIsLoading(false);
+      const queries = [
+        query(collection(db, 'items'), orderBy('dateFound', 'desc')),
+        query(collection(db, 'users')),
+        query(collection(db, 'messages'), orderBy('timestamp', 'desc'))
+      ];
+      const [itemsSnapshot, usersSnapshot, messagesSnapshot] = await Promise.all(queries.map(q => getDocs(q)));
+      
+      setData({
+        items: itemsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+        users: usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+        messages: messagesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+      });
     } catch (error) {
       console.error('Error fetching data:', error);
       showToast('Error fetching data. Please try again.', 'error');
+    } finally {
       setIsLoading(false);
     }
   };
@@ -70,58 +53,44 @@ const AdminDashboard = ({ onLogout }) => {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'items':
-        return (
-          <ItemManagement 
-            items={items} 
-            onAddItem={() => setIsAddItemModalOpen(true)}
-            onRefresh={fetchData}
-          />
-        );
-      case 'users':
-        return (
-          <UserManagement 
-            users={users} 
-            fetchData={fetchData} 
-            showToast={showToast}
-          />
-        );
-      case 'messages':
-        return (
-          <MessageManagement 
-            messages={messages} 
-            users={users} 
-            fetchData={fetchData} 
-            showToast={showToast}
-          />
-        );
-      default:
-        return null;
-    }
+  const contentComponents = {
+    items: <ItemManagement items={data.items} onAddItem={() => setIsAddItemModalOpen(true)} onRefresh={fetchData} />,
+    users: <UserManagement users={data.users} fetchData={fetchData} showToast={showToast} />,
+    messages: <MessageManagement messages={data.messages} users={data.users} fetchData={fetchData} showToast={showToast} />
   };
 
   return (
     <div className="flex h-screen bg-gray-100">
-      <Sidebar activeTab={activeTab} setActiveTab={handleTabChange} />
+      <div className={`fixed inset-0 bg-gray-600 bg-opacity-75 z-20 transition-opacity duration-300 lg:hidden ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={() => setIsMobileMenuOpen(false)} />
+      
+      <div className={`fixed inset-y-0 left-0 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out z-30 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} lg:relative lg:translate-x-0`}>
+        <Sidebar activeTab={activeTab} setActiveTab={handleTabChange} />
+      </div>
+
       <div className="flex-1 flex flex-col overflow-hidden">
         <nav className="bg-white shadow-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between h-16">
-              <div className="flex">
-                <div className="flex-shrink-0 flex items-center">
+              <div className="flex items-center">
+                <button
+                  className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
+                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  aria-label="Toggle menu"
+                >
+                  {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                </button>
+                <div className="flex-shrink-0 flex items-center ml-4 lg:ml-0">
                   <MapPin className="h-8 w-8 text-indigo-600" />
-                  <span className="ml-2 text-2xl font-bold text-gray-800">TraceIt Admin</span>
+                  <span className="ml-2 text-2xl font-bold text-gray-800">Trace-It Admin</span>
                 </div>
               </div>
               <div className="flex items-center">
                 <button 
                   onClick={onLogout}
-                  className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition flex items-center"
+                  className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition flex items-center text-sm"
                 >
                   <LogOut className="h-5 w-5 mr-2" />
-                  Logout
+                  <span className="hidden sm:inline">Logout</span>
                 </button>
               </div>
             </div>
@@ -129,16 +98,18 @@ const AdminDashboard = ({ onLogout }) => {
         </nav>
 
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100">
-          <div className="container mx-auto px-6 py-8">
-            <h1 className="text-3xl font-semibold text-gray-800 mb-6">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <h1 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-6">
               {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
             </h1>
             {isLoading ? (
               <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500" />
               </div>
             ) : (
-              renderContent()
+              <div className="bg-white shadow-md rounded-lg overflow-hidden">
+                {contentComponents[activeTab]}
+              </div>
             )}
           </div>
         </main>
@@ -154,7 +125,7 @@ const AdminDashboard = ({ onLogout }) => {
       )}
       
       {toast && (
-        <div className={`fixed bottom-4 right-4 px-4 py-2 rounded-md text-white ${
+        <div className={`fixed bottom-4 right-4 px-4 py-2 rounded-md text-white shadow-lg transition-opacity duration-300 ${
           toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'
         }`}>
           {toast.message}
