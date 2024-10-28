@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Phone, MapPin, Camera, ArrowLeft } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Camera, ArrowLeft, Edit2, Save } from 'lucide-react';
 import { getAuth, signOut } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -36,20 +36,11 @@ const UserProfile = () => {
       const userDoc = await getDoc(doc(db, 'users', user.uid));
       if (userDoc.exists()) {
         const userData = userDoc.data();
-        setProfile({
-          ...profile,
-          fullName: userData.fullName || '',
-          email: userData.email || user.email || '',
-          phone: userData.phone || '',
-          address: userData.address || '',
-          gender: userData.gender || '',
-          profileImageUrl: userData.profileImageUrl || ''
-        });
+        setProfile(prev => ({ ...prev, ...userData, email: userData.email || user.email || '' }));
       } else {
         await setDoc(doc(db, 'users', user.uid), {
           fullName: user.displayName || '',
           email: user.email || '',
-          gender: '',
           createdAt: new Date()
         });
       }
@@ -78,11 +69,7 @@ const UserProfile = () => {
       }
 
       await updateDoc(doc(db, 'users', user.uid), {
-        fullName: profile.fullName,
-        email: profile.email,
-        phone: profile.phone,
-        address: profile.address,
-        gender: profile.gender,
+        ...profile,
         profileImageUrl,
         updatedAt: new Date()
       });
@@ -100,7 +87,7 @@ const UserProfile = () => {
 
   if (loading) {
     return <div className="flex justify-center items-center h-screen">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500" />
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500" />
     </div>;
   }
 
@@ -108,137 +95,120 @@ const UserProfile = () => {
   const handleImageChange = (e) => e.target.files[0] && setProfile(prev => ({ ...prev, profileImage: e.target.files[0] }));
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-        <div className="px-4 py-5 sm:px-6 bg-gradient-to-r from-indigo-600 to-purple-600 flex justify-between items-center">
-          <div>
-            <h3 className="text-lg font-medium text-white">User Profile</h3>
-            <p className="mt-1 text-sm text-gray-200">Manage your personal information</p>
-          </div>
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-800 hover:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </button>
-        </div>
-
-        {error && (
-          <div className="bg-red-50 border-l-4 border-red-400 p-4 m-4">
-            <p className="text-sm text-red-700">{error}</p>
-          </div>
-        )}
-
-        {successMessage && (
-          <div className="bg-green-50 border-l-4 border-green-400 p-4 m-4">
-            <p className="text-sm text-green-700">{successMessage}</p>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="divide-y divide-gray-200">
-          <div className="py-6 px-4 sm:p-6">
-            <div className="flex flex-col items-center mb-6">
-              <div className="relative">
-                <img
-                  src={profile.profileImageUrl || 'https://via.placeholder.com/150'}
-                  alt="Profile"
-                  className="h-32 w-32 rounded-full object-cover border-4 border-white shadow-lg"
-                />
-                {isEditing && (
-                  <label className="absolute bottom-0 right-0 bg-indigo-600 rounded-full p-2 cursor-pointer hover:bg-indigo-700">
-                    <Camera className="h-5 w-5 text-white" />
-                    <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
-                  </label>
-                )}
-              </div>
-            </div>
-
-            {['fullName', 'gender', 'email', 'phone', 'address'].map((field) => (
-              <div key={field} className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 flex items-center">
-                  {field === 'fullName' && <User className="h-5 w-5 mr-2 text-gray-400" />}
-                  {field === 'email' && <Mail className="h-5 w-5 mr-2 text-gray-400" />}
-                  {field === 'phone' && <Phone className="h-5 w-5 mr-2 text-gray-400" />}
-                  {field === 'address' && <MapPin className="h-5 w-5 mr-2 text-gray-400" />}
-                  {field.charAt(0).toUpperCase() + field.slice(1)}
+    <div className="min-h-screen bg-gradient-to-br from-purple-100 to-indigo-200 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div className="md:flex">
+          <div className="md:flex-shrink-0 bg-gradient-to-br from-purple-600 to-indigo-700 p-8 md:w-64 flex flex-col items-center justify-center">
+            <div className="relative mb-4">
+              <img
+                src={profile.profileImageUrl || 'https://via.placeholder.com/150'}
+                alt="Profile"
+                className="h-32 w-32 rounded-full object-cover border-4 border-white shadow-lg"
+              />
+              {isEditing && (
+                <label className="absolute bottom-0 right-0 bg-white rounded-full p-2 cursor-pointer shadow-lg">
+                  <Camera className="h-5 w-5 text-purple-600" />
+                  <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
                 </label>
-                {field === 'gender' ? (
-                  <select
-                    name={field}
-                    value={profile[field]}
-                    onChange={handleInputChange}
-                    disabled={!isEditing || field === 'email'}
-                    className={`mt-1 block w-full rounded-md ${
-                      isEditing && field !== 'email'
-                        ? 'border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500'
-                        : 'border-transparent bg-gray-100'
-                    } sm:text-sm`}
-                  >
-                    <option value="">Select Gender</option>
-                    {['male', 'female', 'other'].map(option => (
-                      <option key={option} value={option}>{option.charAt(0).toUpperCase() + option.slice(1)}</option>
-                    ))}
-                  </select>
-                ) : field === 'address' ? (
-                  <textarea
-                    name={field}
-                    value={profile[field]}
-                    onChange={handleInputChange}
-                    disabled={!isEditing || field === 'email'}
-                    rows="3"
-                    className={`mt-1 block w-full rounded-md ${
-                      isEditing && field !== 'email'
-                        ? 'border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500'
-                        : 'border-transparent bg-gray-100'
-                    } sm:text-sm`}
-                  />
+              )}
+            </div>
+            <h2 className="mt-2 text-2xl font-semibold text-white text-center">{profile.fullName}</h2>
+            <p className="mt-1 text-indigo-200">{profile.email}</p>
+          </div>
+          <div className="p-8 md:flex-1">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-semibold text-gray-800">User Profile</h3>
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="flex items-center text-indigo-600 hover:text-indigo-800 transition-colors duration-200"
+              >
+                <ArrowLeft className="h-5 w-5 mr-1" />
+                Back to Dashboard
+              </button>
+            </div>
+            {error && (
+              <div className="mb-4 p-4 bg-red-100 border-l-4 border-red-500 text-red-700">
+                <p>{error}</p>
+              </div>
+            )}
+            {successMessage && (
+              <div className="mb-4 p-4 bg-green-100 border-l-4 border-green-500 text-green-700">
+                <p>{successMessage}</p>
+              </div>
+            )}
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {[
+                { name: 'fullName', icon: User, type: 'text' },
+                { name: 'phone', icon: Phone, type: 'tel' },
+                { name: 'address', icon: MapPin, type: 'text' },
+                { name: 'gender', icon: User, type: 'select', options: ['male', 'female', 'other'] }
+              ].map(({ name, icon: Icon, type, options }) => (
+                <div key={name} className="relative">
+                  <label className="text-sm font-medium text-gray-700 mb-1 block">
+                    {name.charAt(0).toUpperCase() + name.slice(1)}
+                  </label>
+                  <div className="mt-1 relative rounded-md shadow-sm">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Icon className="h-5 w-5 text-gray-400" />
+                    </div>
+                    {type === 'select' ? (
+                      <select
+                        name={name}
+                        value={profile[name]}
+                        onChange={handleInputChange}
+                        disabled={!isEditing}
+                        className="block w-full pl-10 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                      >
+                        <option value="">Select {name}</option>
+                        {options.map(option => (
+                          <option key={option} value={option}>{option.charAt(0).toUpperCase() + option.slice(1)}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type={type}
+                        name={name}
+                        value={profile[name]}
+                        onChange={handleInputChange}
+                        disabled={!isEditing}
+                        className="block w-full pl-10 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                      />
+                    )}
+                  </div>
+                </div>
+              ))}
+              <div className="flex justify-end">
+                {isEditing ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditing(false)}
+                      className="mr-4 inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Changes
+                    </button>
+                  </>
                 ) : (
-                  <input
-                    type={field === 'email' ? 'email' : field === 'phone' ? 'tel' : 'text'}
-                    name={field}
-                    value={profile[field]}
-                    onChange={handleInputChange}
-                    disabled={!isEditing || field === 'email'}
-                    className={`mt-1 block w-full rounded-md ${
-                      isEditing && field !== 'email'
-                        ? 'border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500'
-                        : 'border-transparent bg-gray-100'
-                    } sm:text-sm`}
-                  />
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(true)}
+                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  >
+                    <Edit2 className="h-4 w-4 mr-2" />
+                    Edit Profile
+                  </button>
                 )}
               </div>
-            ))}
+            </form>
           </div>
-
-          <div className="px-4 py-3 bg-gray-50 text-right sm:px-6">
-            {isEditing ? (
-              <div className="flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setIsEditing(false)}
-                  className="inline-flex justify-center rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                >
-                  Save Changes
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setIsEditing(true)}
-                className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-              >
-                Edit Profile
-              </button>
-            )}
-          </div>
-        </form>
+        </div>
       </div>
     </div>
   );
