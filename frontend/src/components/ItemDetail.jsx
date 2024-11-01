@@ -8,7 +8,10 @@ import {
   collection, 
   addDoc, 
   serverTimestamp,
-  arrayUnion 
+  arrayUnion,
+  query,
+  where,
+  getDocs
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
 
@@ -44,6 +47,8 @@ const ItemDetail = ({ currentUser }) => {
   const [selectedRegion, setSelectedRegion] = useState('');
   const [selectedDistrict, setSelectedDistrict] = useState('');
   const [deliveryFee, setDeliveryFee] = useState(0);
+  const [userHasClaimed, setUserHasClaimed] = useState(false);
+  const [totalClaims, setTotalClaims] = useState(0);
   const [claimDetails, setClaimDetails] = useState({
     identificationDetails: '',
     contactInformation: '',
@@ -55,13 +60,31 @@ const ItemDetail = ({ currentUser }) => {
   const [toast, setToast] = useState(null);
 
   useEffect(() => {
-    const fetchItem = async () => {
+    const fetchItemAndClaims = async () => {
       try {
         const docRef = doc(db, 'items', id);
         const docSnap = await getDoc(docRef);
         
         if (docSnap.exists()) {
-          setItem({ id: docSnap.id, ...docSnap.data() });
+          const itemData = { id: docSnap.id, ...docSnap.data() };
+          setItem(itemData);
+          
+          // Check if user has already claimed this item
+          const userClaimsQuery = query(
+            collection(db, 'claims'),
+            where('itemId', '==', id),
+            where('userId', '==', currentUser.uid)
+          );
+          const userClaimsSnapshot = await getDocs(userClaimsQuery);
+          setUserHasClaimed(!userClaimsSnapshot.empty);
+
+          // Get total claims count
+          const allClaimsQuery = query(
+            collection(db, 'claims'),
+            where('itemId', '==', id)
+          );
+          const allClaimsSnapshot = await getDocs(allClaimsQuery);
+          setTotalClaims(allClaimsSnapshot.size);
         }
       } catch (error) {
         console.error('Error:', error);
@@ -71,13 +94,12 @@ const ItemDetail = ({ currentUser }) => {
       }
     };
 
-    fetchItem();
-  }, [id]);
+    fetchItemAndClaims();
+  }, [id, currentUser.uid]);
 
   useEffect(() => {
     if (selectedRegion && selectedDistrict) {
       const baseFee = REGIONS_AND_DISTRICTS[selectedRegion].baseFee;
-      // Add distance-based calculation if needed
       const calculatedFee = baseFee;
       setDeliveryFee(calculatedFee);
       setClaimDetails(prev => ({
@@ -105,6 +127,7 @@ const ItemDetail = ({ currentUser }) => {
     setIsLoading(true);
 
     try {
+      // Create the claim document
       const claim = {
         userId: currentUser.uid,
         userEmail: currentUser.email,
@@ -116,24 +139,34 @@ const ItemDetail = ({ currentUser }) => {
 
       const claimRef = await addDoc(collection(db, 'claims'), claim);
 
-      await updateDoc(doc(db, 'items', id), {
+      // Update the item document
+      const itemRef = doc(db, 'items', id);
+      await updateDoc(itemRef, {
+        status: 'pending_claim', // Updated status to indicate multiple claims possible
         claims: arrayUnion(claimRef.id),
-        status: 'pending_claim'
+        claimCount: (totalClaims + 1),
+        lastUpdated: serverTimestamp()
       });
 
+      // Create notification
       await addDoc(collection(db, 'notifications'), {
         type: 'new_claim',
         itemId: id,
         claimId: claimRef.id,
         userId: currentUser.uid,
         timestamp: serverTimestamp(),
-        read: false
+        read: false,
+        message: `New claim submitted for ${item.name}`,
+        userEmail: currentUser.email
       });
 
       showToast('Claim submitted successfully', 'success');
       setShowClaimForm(false);
+      setUserHasClaimed(true);
+      setTotalClaims(prev => prev + 1);
       
-      const updatedDoc = await getDoc(doc(db, 'items', id));
+      // Fetch updated item data
+      const updatedDoc = await getDoc(itemRef);
       if (updatedDoc.exists()) {
         setItem({ id: updatedDoc.id, ...updatedDoc.data() });
       }
@@ -191,13 +224,20 @@ const ItemDetail = ({ currentUser }) => {
 
         <div className="flex justify-between items-start mb-4">
           <h1 className="text-2xl font-bold">{item.name}</h1>
-          <span className={`px-2 py-1 rounded ${
-            item.status === 'unclaimed' 
-              ? 'bg-green-100 text-green-800' 
-              : 'bg-yellow-100 text-yellow-800'
-          }`}>
-            {item.status}
-          </span>
+          <div className="flex flex-col items-end">
+            <span className={`px-2 py-1 rounded ${
+              item.status === 'unclaimed' 
+                ? 'bg-green-100 text-green-800' 
+                : 'bg-yellow-100 text-yellow-800'
+            }`}>
+              {item.status}
+            </span>
+            {totalClaims > 0 && (
+              <span className="text-sm text-gray-600 mt-1">
+                {totalClaims} claim{totalClaims !== 1 ? 's' : ''} submitted
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="space-y-4">
@@ -218,12 +258,16 @@ const ItemDetail = ({ currentUser }) => {
           </div>
         </div>
 
-        {item.status === 'unclaimed' && (
+        {userHasClaimed ? (
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg text-blue-700">
+            You have already submitted a claim for this item
+          </div>
+        ) : (
           <button
             onClick={() => setShowClaimForm(true)}
             className="w-full mt-6 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition-colors"
           >
-            Claim This Item
+            Submit a Claim
           </button>
         )}
 
