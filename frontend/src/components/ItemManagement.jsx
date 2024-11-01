@@ -1,12 +1,27 @@
-import React, { useState } from 'react';
-import { Edit, Trash2, Eye, Search, Bell, CheckCircle, XCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Edit, Trash2, Eye, Search, MapPin, Bell } from 'lucide-react';
+import { 
+  doc, 
+  updateDoc, 
+  getDoc, 
+  collection, 
+  addDoc, 
+  serverTimestamp,
+  onSnapshot,
+  query,
+  orderBy 
+} from 'firebase/firestore';
+import { db } from '../firebase/config';
+import ClaimDetailsModal from './ClaimDetailsModal';
 
-const ItemManagement = ({ items, onAddItem, onDeleteItem, onEditItem, onApproveClaim, onRejectClaim }) => {
+const ItemManagement = ({ onAddItem, onDeleteItem, onEditItem }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
   const [activeTab, setActiveTab] = useState('available');
   const [showNotifications, setShowNotifications] = useState(false);
   const [claimDetailsModal, setClaimDetailsModal] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [items, setItems] = useState([]);
 
   const categories = ['All Categories', 'National IDs', 'Number Plates', 'Driving Permits', 'Academic Documents', 'Other Items'];
   const tabs = [
@@ -15,9 +30,33 @@ const ItemManagement = ({ items, onAddItem, onDeleteItem, onEditItem, onApproveC
     { id: 'claimed', label: 'Claimed Items' }
   ];
 
+  // Set up real-time listener for items
+  useEffect(() => {
+    const itemsRef = collection(db, 'items');
+    const q = query(itemsRef, orderBy('createdAt', 'desc'));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const itemsData = [];
+      snapshot.forEach((doc) => {
+        itemsData.push({ id: doc.id, ...doc.data() });
+      });
+      setItems(itemsData);
+    }, (error) => {
+      console.error("Error fetching items:", error);
+      showToast('Error fetching items', 'error');
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const showToast = (message, type) => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   const filteredItems = items.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.details.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = (item.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+      (item.details?.toLowerCase() || '').includes(searchTerm.toLowerCase());
     const matchesCategory = filterCategory === '' || filterCategory === 'All Categories' ||
       item.category === filterCategory;
     const matchesStatus = activeTab === 'available' ? item.status === 'unclaimed' :
@@ -28,66 +67,108 @@ const ItemManagement = ({ items, onAddItem, onDeleteItem, onEditItem, onApproveC
 
   const handleClaimAction = async (action, itemId, claimId) => {
     try {
-      await (action === 'approve' ? onApproveClaim(itemId, claimId) : onRejectClaim(itemId, claimId));
+      const itemRef = doc(db, 'items', itemId);
+      const claimRef = doc(db, 'claims', claimId);
+
+      if (action === 'approve') {
+        await updateDoc(itemRef, {
+          status: 'claimed',
+          approvedClaimId: claimId,
+          approvedAt: serverTimestamp(),
+          lastUpdated: serverTimestamp()
+        });
+        
+        await updateDoc(claimRef, {
+          status: 'approved',
+          approvedAt: serverTimestamp(),
+          lastUpdated: serverTimestamp()
+        });
+
+        await addDoc(collection(db, 'notifications'), {
+          type: 'claim_approved',
+          itemId,
+          claimId,
+          timestamp: serverTimestamp(),
+          read: false,
+          userId: claimDetailsModal.claim.userId
+        });
+
+        showToast('Claim approved successfully', 'success');
+      } else {
+        await updateDoc(itemRef, {
+          status: 'unclaimed',
+          claims: [],
+          rejectedAt: serverTimestamp(),
+          lastUpdated: serverTimestamp()
+        });
+        
+        await updateDoc(claimRef, {
+          status: 'rejected',
+          rejectedAt: serverTimestamp(),
+          lastUpdated: serverTimestamp()
+        });
+
+        await addDoc(collection(db, 'notifications'), {
+          type: 'claim_rejected',
+          itemId,
+          claimId,
+          timestamp: serverTimestamp(),
+          read: false,
+          userId: claimDetailsModal.claim.userId
+        });
+
+        showToast('Claim rejected successfully', 'success');
+      }
+
       setClaimDetailsModal(null);
     } catch (error) {
       console.error(`Error ${action}ing claim:`, error);
+      showToast(`Error ${action}ing claim`, 'error');
     }
   };
 
-  const ClaimDetailsModal = ({ claim, item, onClose }) => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg p-6 max-w-2xl w-full">
-        <h2 className="text-xl font-bold mb-4">Claim Details</h2>
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="space-y-2">
-            <h3 className="font-semibold">Item Details</h3>
-            <p><span className="font-medium">Name:</span> {item.name}</p>
-            <p><span className="font-medium">Category:</span> {item.category}</p>
-            <p><span className="font-medium">Location Found:</span> {item.location}</p>
-            <p><span className="font-medium">Date Found:</span> {new Date(item.dateFound).toLocaleDateString()}</p>
-          </div>
-          <div className="space-y-2">
-            <h3 className="font-semibold">Claimant Details</h3>
-            <p><span className="font-medium">Email:</span> {claim.userEmail}</p>
-            <p><span className="font-medium">Contact:</span> {claim.contactInformation}</p>
-            <p><span className="font-medium">Identification:</span> {claim.identificationDetails}</p>
-            <p><span className="font-medium">Notes:</span> {claim.additionalNotes}</p>
-          </div>
-        </div>
-        {(item.status === 'pending_claim' || item.status === 'unclaimed') && (
-          <div className="space-y-4">
-            <div className="border-t pt-4">
-              <h3 className="font-semibold mb-2">Delivery and Cost Details</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <input type="number" placeholder="Delivery Cost" className="border rounded p-2" />
-                <input type="text" placeholder="Estimated Delivery Time" className="border rounded p-2" />
-              </div>
-            </div>
-            <div className="flex justify-end space-x-3">
-              <button onClick={() => handleClaimAction('reject', item.id, claim.id)} className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">
-                Reject Claim
-              </button>
-              <button onClick={() => handleClaimAction('approve', item.id, claim.id)} className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
-                Approve Claim
-              </button>
-            </div>
-          </div>
-        )}
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700">×</button>
-      </div>
-    </div>
-  );
+  const viewClaimDetails = async (item) => {
+    try {
+      if (item.claims && item.claims.length > 0) {
+        const claimRef = doc(db, 'claims', item.claims[0]);
+        const claimSnap = await getDoc(claimRef);
+        if (claimSnap.exists()) {
+          setClaimDetailsModal({
+            claim: { id: claimSnap.id, ...claimSnap.data() },
+            item: item
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching claim details:', error);
+      showToast('Error fetching claim details', 'error');
+    }
+  };
 
+  // The rest of your component remains exactly the same
   return (
-    <div className="space-y-4 p-4">
+    <div className="p-4">
+      {toast && (
+        <div className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg ${
+          toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+        } text-white z-50`}>
+          {toast.message}
+        </div>
+      )}
+
       <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
         <div className="flex items-center space-x-4">
-          <button onClick={onAddItem} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors">
+          <button
+            onClick={onAddItem}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors"
+          >
             Add New Item
           </button>
           <div className="relative">
-            <button onClick={() => setShowNotifications(!showNotifications)} className="p-2 rounded-full hover:bg-gray-100 relative">
+            <button
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="p-2 rounded-full hover:bg-gray-100 relative"
+            >
               <Bell className="h-6 w-6" />
             </button>
             {showNotifications && (
@@ -100,109 +181,131 @@ const ItemManagement = ({ items, onAddItem, onDeleteItem, onEditItem, onApproveC
             )}
           </div>
         </div>
-        <div className="flex flex-wrap gap-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+
+        <div className="flex flex-col md:flex-row md:items-center md:space-x-4 space-y-2 md:space-y-0">
+          <div className="flex-1 relative">
             <input
               type="text"
-              className="pl-10 pr-3 py-2 w-64 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Search items..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border rounded-lg"
             />
+            <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
           </div>
+
           <select
-            className="w-48 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
+            className="px-4 py-2 border rounded-lg"
           >
-            {categories.map((category) => (
+            {categories.map(category => (
               <option key={category} value={category}>{category}</option>
             ))}
           </select>
         </div>
       </div>
 
-      <div className="mb-4 border-b border-gray-200">
-        <nav className="flex -mb-px">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`py-2 px-4 border-b-2 font-medium text-sm ${
-                activeTab === tab.id
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </nav>
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-4">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-4 py-2 rounded-lg ${
+                  activeTab === tab.id
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+      <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                {['Image', 'Name', 'Category', 'Location', 'Status', 'Date Found', 'Actions'].map((header) => (
-                  <th key={header} scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {header}
-                  </th>
-                ))}
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Item
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Category
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Location
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredItems.map((item) => (
-                <tr key={item._id} className="hover:bg-gray-50">
+              {filteredItems.map(item => (
+                <tr key={item.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {item.image ? (
-                      <img src={item.image} alt={item.name} className="h-10 w-10 rounded-full object-cover" />
-                    ) : (
-                      <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                        <span className="text-gray-500 text-xs">No img</span>
+                    <div className="flex items-center">
+                      {item.imageUrl && (
+                        <img
+                          src={item.imageUrl}
+                          alt={item.name}
+                          className="h-10 w-10 rounded-full mr-3"
+                        />
+                      )}
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">{item.name}</div>
+                        <div className="text-sm text-gray-500">{item.details}</div>
                       </div>
-                    )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{item.name}</div>
+                    <span className="text-sm text-gray-900">{item.category}</span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{item.category}</div>
+                    <div className="flex items-center text-sm text-gray-900">
+                      <MapPin className="h-4 w-4 mr-1" />
+                      {item.location}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{item.location}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      item.status === 'unclaimed' ? 'bg-green-100 text-green-800' :
-                      item.status === 'pending_claim' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-blue-100 text-blue-800'
+                    <span className={`px-2 py-1 rounded-full text-xs ${
+                      item.status === 'unclaimed'
+                        ? 'bg-green-100 text-green-800'
+                        : item.status === 'pending_claim'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-blue-100 text-blue-800'
                     }`}>
                       {item.status}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{new Date(item.dateFound).toLocaleDateString()}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-3">
-                      {(item.status === 'pending_claim' || item.status === 'claimed') && (
+                    <div className="flex items-center space-x-2">
+                      {item.status === 'pending_claim' && (
                         <button
-                          onClick={() => setClaimDetailsModal({ 
-                            item, 
-                            claim: item.status === 'claimed' ? item.approvedClaim : item.currentClaim 
-                          })}
-                          className="text-blue-600 hover:text-blue-900"
+                          onClick={() => viewClaimDetails(item)}
+                          className="text-blue-600 hover:text-blue-800"
                         >
                           <Eye className="h-5 w-5" />
                         </button>
                       )}
-                      <button onClick={() => onEditItem(item)} className="text-indigo-600 hover:text-indigo-900">
+                      <button
+                        onClick={() => onEditItem(item)}
+                        className="text-yellow-600 hover:text-yellow-800"
+                      >
                         <Edit className="h-5 w-5" />
                       </button>
-                      <button onClick={() => onDeleteItem(item._id)} className="text-red-600 hover:text-red-900">
+                      <button
+                        onClick={() => onDeleteItem(item.id)}
+                        className="text-red-600 hover:text-red-800"
+                      >
                         <Trash2 className="h-5 w-5" />
                       </button>
                     </div>
@@ -219,6 +322,7 @@ const ItemManagement = ({ items, onAddItem, onDeleteItem, onEditItem, onApproveC
           claim={claimDetailsModal.claim}
           item={claimDetailsModal.item}
           onClose={() => setClaimDetailsModal(null)}
+          onClaimAction={handleClaimAction}
         />
       )}
     </div>
