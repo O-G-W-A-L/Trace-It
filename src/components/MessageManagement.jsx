@@ -1,19 +1,30 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase/config';
+import { Send, Search, Menu, X } from 'lucide-react';
 
-const MessageManagement = ({ messages, users, fetchData, showToast }) => {
+const MessageManagement = ({ messages = [], users = [], fetchData, showToast }) => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [newMessage, setNewMessage] = useState('');
   const [localMessages, setLocalMessages] = useState(messages);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const messagesEndRef = useRef(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  const lastMessageRef = useRef(null);
+  const messageContainerRef = useRef(null);
 
   useEffect(() => {
-    scrollToBottom();
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [localMessages]);
+
+  useEffect(() => {
+    lastMessageRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [selectedUser]);
+
+  useEffect(() => {
+    if (messageContainerRef.current) {
+      messageContainerRef.current.style.paddingBottom = '80px';
+    }
   }, [localMessages]);
 
   const handleSendMessage = async (e) => {
@@ -39,13 +50,9 @@ const MessageManagement = ({ messages, users, fetchData, showToast }) => {
         timestamp: serverTimestamp(),
       });
 
-      setLocalMessages(prevMessages => [...prevMessages, { 
-        ...newMessageData, 
-        id: docRef.id
-      }]);
-      
+      setLocalMessages(prev => [...prev, { ...newMessageData, id: docRef.id }]);
       setNewMessage('');
-      scrollToBottom();
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     } catch (error) {
       console.error('Error sending message:', error);
       showToast('Failed to send message. Please try again.', 'error');
@@ -63,101 +70,154 @@ const MessageManagement = ({ messages, users, fetchData, showToast }) => {
     });
   };
 
-  const sortedMessages = [...localMessages].sort((a, b) => {
-    if (!a.timestamp || !b.timestamp) return 0;
-    const dateA = a.timestamp instanceof Date ? a.timestamp : a.timestamp.toDate();
-    const dateB = b.timestamp instanceof Date ? b.timestamp : b.timestamp.toDate();
-    return dateB - dateA;
-  });
+  const filteredUsers = users.filter(user =>
+    (user.fullName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (user.email?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+  );
+
+  const filteredMessages = [...localMessages]
+    .sort((a, b) => {
+      if (!a.timestamp || !b.timestamp) return 0;
+      const dateA = a.timestamp instanceof Date ? a.timestamp : a.timestamp.toDate();
+      const dateB = b.timestamp instanceof Date ? b.timestamp : b.timestamp.toDate();
+      return dateA - dateB;
+    })
+    .filter(msg => 
+      selectedUser && (
+        (msg.senderEmail === selectedUser.email && msg.recipientEmail === 'admin@example.com') ||
+        (msg.senderEmail === 'admin@example.com' && msg.recipientEmail === selectedUser.email)
+      )
+    );
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div className="bg-white shadow-md rounded-lg overflow-hidden">
-        <div className="p-4 border-b bg-gray-50">
-          <h3 className="text-lg font-semibold">Users</h3>
-        </div>
-        <div className="overflow-y-auto h-[calc(100vh-300px)]">
-          {users.map((user) => (
-            <div
-              key={user.id}
-              className={`flex items-center p-4 cursor-pointer hover:bg-gray-100 transition duration-150 ${
-                selectedUser?.id === user.id ? 'bg-blue-50' : ''
-              }`}
-              onClick={() => setSelectedUser(user)}
-            >
-              <div className="w-10 h-10 rounded-full flex items-center justify-center mr-3">
-                {user.profileImageUrl ? (
-                  <img 
-                    src={user.profileImageUrl} 
-                    alt={user.fullName} 
-                    className="h-10 w-10 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center">
-                    <span className="text-white font-medium text-sm">
-                      {user.fullName?.charAt(0).toUpperCase() || '?'}
-                    </span>
-                  </div>
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold truncate">{user.fullName || 'Unnamed User'}</p>
-                <p className="text-sm text-gray-500 truncate">{user.email || 'No email'}</p>
-              </div>
+    <div className="flex h-[calc(100vh-64px)] bg-gradient-to-br from-slate-50 to-blue-50 overflow-hidden">
+      {/* Sidebar */}
+      <aside className={`
+        fixed md:relative inset-y-0 left-0 z-50 md:z-auto
+        w-[280px] lg:w-[320px]
+        bg-white shadow-lg
+        transition-transform duration-300
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+      `}>
+        <div className="flex flex-col h-full">
+          <div className="p-4 bg-gradient-to-r from-blue-600 to-indigo-600 flex items-center justify-between">
+            <h2 className="text-white text-lg font-semibold">Messages</h2>
+            <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-white">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          <div className="p-3 border-b">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search users..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-50 border focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
             </div>
-          ))}
-        </div>
-      </div>
-      <div className="bg-white shadow-md rounded-lg overflow-hidden md:col-span-2">
-        <div className="p-4 border-b bg-gray-50">
-          <h3 className="text-lg font-semibold">
-            {selectedUser ? `Chat with ${selectedUser.fullName}` : 'Select a user to start messaging'}
-          </h3>
-        </div>
-        <div className="flex flex-col-reverse overflow-y-auto h-[calc(100vh-400px)] p-4">
-          <div ref={messagesEndRef} />
-          {sortedMessages
-            .filter(msg => 
-              selectedUser && (
-                (msg.senderEmail === selectedUser.email && msg.recipientEmail === 'admin@example.com') ||
-                (msg.senderEmail === 'admin@example.com' && msg.recipientEmail === selectedUser.email)
-              )
-            )
-            .map((message) => (
-              <div key={message.id} className={`flex ${message.sender === 'Admin' ? 'justify-end' : 'justify-start'} mb-4`}>
-                <div className={`max-w-[70%] rounded-lg p-3 ${
-                  message.sender === 'Admin' 
-                    ? 'bg-blue-100 text-blue-900' 
-                    : 'bg-gray-100 text-gray-900'
-                }`}>
-                  <p className="text-base">{message.content}</p>
-                  <p className="text-xs mt-2 opacity-70">
-                    {formatTimestamp(message.timestamp)}
+          </div>
+
+          <div className="flex-1 overflow-y-auto">
+            {filteredUsers.map((user) => (
+              <div
+                key={user.id}
+                onClick={() => {
+                  setSelectedUser(user);
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`
+                  flex items-center gap-3 p-3 cursor-pointer
+                  transition-all duration-200
+                  hover:bg-gray-50
+                  ${selectedUser?.id === user.id ? 'bg-blue-50 border-l-4 border-blue-600' : 'border-l-4 border-transparent'}
+                `}
+              >
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center flex-shrink-0">
+                  <span className="text-white font-semibold">
+                    {(user.fullName || 'U')[0].toUpperCase()}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-gray-900 truncate">
+                    {user.fullName || 'Unnamed User'}
                   </p>
+                  <p className="text-sm text-gray-500 truncate">{user.email}</p>
                 </div>
               </div>
             ))}
+          </div>
         </div>
-        <div className="p-4 border-t bg-gray-50">
+      </aside>
+
+      {/* Main Chat Area */}
+      <main className="flex-1 flex flex-col min-w-0">
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 flex items-center gap-3">
+          <button
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="md:hidden text-white hover:bg-white/10 rounded-full p-2"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          <h3 className="text-white text-lg font-semibold truncate">
+            {selectedUser ? selectedUser.fullName : 'Select a conversation'}
+          </h3>
+        </div>
+
+        <div ref={messageContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+          {filteredMessages.map((message, index) => (
+            <div
+              key={message.id}
+              ref={index === filteredMessages.length - 1 ? lastMessageRef : null}
+              className={`flex ${message.sender === 'Admin' ? 'justify-end' : 'justify-start'}`}
+            >
+              <div className={`
+                max-w-[75%] rounded-lg p-3
+                ${message.sender === 'Admin'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white border shadow-sm'
+                }
+              `}>
+                <p className="text-sm break-words">{message.content}</p>
+                <p className={`text-xs mt-1 ${message.sender === 'Admin' ? 'text-blue-100' : 'text-gray-500'}`}>
+                  {formatTimestamp(message.timestamp)}
+                </p>
+              </div>
+            </div>
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
+
+        <div className="p-3 bg-white border-t">
           <form onSubmit={handleSendMessage} className="flex gap-2">
             <input
               type="text"
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
-              placeholder={selectedUser ? `Message ${selectedUser.fullName}...` : 'Select a user to message'}
+              placeholder={selectedUser ? `Message ${selectedUser.fullName}...` : 'Select a user to start messaging'}
               disabled={!selectedUser}
-              className="flex-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 px-4 py-2 rounded-full bg-gray-50 border focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
             />
             <button
               type="submit"
               disabled={!newMessage.trim() || !selectedUser}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed transition duration-150"
+              className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
             >
-              Send
+              <Send className="h-5 w-5" />
             </button>
           </form>
         </div>
-      </div>
+      </main>
+
+      {/* Mobile Overlay */}
+      {isMobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
     </div>
   );
 };
