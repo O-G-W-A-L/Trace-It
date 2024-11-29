@@ -5,7 +5,8 @@ import {
   updateDoc, 
   getDoc, 
   collection, 
-  addDoc, 
+  addDoc,
+  deleteDoc, 
   serverTimestamp,
   onSnapshot,
   query,
@@ -14,7 +15,7 @@ import {
 import { db } from '../firebase/config';
 import ClaimDetailsModal from './ClaimDetailsModal';
 
-const ItemManagement = ({ onAddItem, onDeleteItem, onEditItem }) => {
+const ItemManagement = ({ onAddItem, onEditItem }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
   const [activeTab, setActiveTab] = useState('available');
@@ -30,7 +31,6 @@ const ItemManagement = ({ onAddItem, onDeleteItem, onEditItem }) => {
     { id: 'claimed', label: 'Claimed Items' }
   ];
 
-  // Set up real-time listener for items
   useEffect(() => {
     const itemsRef = collection(db, 'items');
     const q = query(itemsRef, orderBy('createdAt', 'desc'));
@@ -52,6 +52,38 @@ const ItemManagement = ({ onAddItem, onDeleteItem, onEditItem }) => {
   const showToast = (message, type) => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleDeleteItem = async (itemId) => {
+    try {
+      // Check if the item exists
+      const itemRef = doc(db, 'items', itemId);
+      const itemSnap = await getDoc(itemRef);
+      
+      if (!itemSnap.exists()) {
+        showToast('Item not found', 'error');
+        return;
+      }
+
+      // If the item has claims, delete them first
+      const itemData = itemSnap.data();
+      if (itemData.claims && itemData.claims.length > 0) {
+        for (const claimId of itemData.claims) {
+          const claimRef = doc(db, 'claims', claimId);
+          await deleteDoc(claimRef);
+        }
+      }
+
+      // Delete the item document
+      await deleteDoc(itemRef);
+
+      // Show success message
+      showToast('Item deleted successfully', 'success');
+
+    } catch (error) {
+      console.error('Error deleting item:', error);
+      showToast('Error deleting item', 'error');
+    }
   };
 
   const filteredItems = items.filter(item => {
@@ -145,7 +177,6 @@ const ItemManagement = ({ onAddItem, onDeleteItem, onEditItem }) => {
     }
   };
 
-  // The rest of your component remains exactly the same
   return (
     <div className="p-4">
       {toast && (
@@ -303,7 +334,7 @@ const ItemManagement = ({ onAddItem, onDeleteItem, onEditItem }) => {
                         <Edit className="h-5 w-5" />
                       </button>
                       <button
-                        onClick={() => onDeleteItem(item.id)}
+                        onClick={() => handleDeleteItem(item.id)}
                         className="text-red-600 hover:text-red-800"
                       >
                         <Trash2 className="h-5 w-5" />

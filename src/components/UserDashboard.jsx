@@ -22,9 +22,20 @@ const UserDashboard = ({ user, onLogout }) => {
   const fetchItems = async () => {
     setIsLoading(true);
     try {
-      const itemsQuery = activeCategory === 'All' 
-        ? query(collection(db, 'items'))
-        : query(collection(db, 'items'), where('category', '==', activeCategory));
+      let itemsQuery;
+      if (activeCategory === 'All') {
+        itemsQuery = query(
+          collection(db, 'items'),
+          where('status', '!=', 'deleted')
+        );
+      } else {
+        itemsQuery = query(
+          collection(db, 'items'),
+          where('category', '==', activeCategory),
+          where('status', '!=', 'deleted')
+        );
+      }
+      
       const querySnapshot = await getDocs(itemsQuery);
       const fetchedItems = querySnapshot.docs.map(doc => {
         const data = doc.data();
