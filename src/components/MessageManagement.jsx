@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { Send, Search, Menu, X } from 'lucide-react';
 
@@ -9,6 +9,7 @@ const MessageManagement = ({ messages = [], users = [], fetchData, showToast }) 
   const [localMessages, setLocalMessages] = useState(messages);
   const [searchTerm, setSearchTerm] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [unreadCounts, setUnreadCounts] = useState({});
   const messagesEndRef = useRef(null);
   const lastMessageRef = useRef(null);
   const messageContainerRef = useRef(null);
@@ -27,6 +28,29 @@ const MessageManagement = ({ messages = [], users = [], fetchData, showToast }) 
     }
   }, [localMessages]);
 
+  useEffect(() => {
+    // Calculate unread counts and last messages for each user
+    const counts = {};
+    const userLastMessages = {};
+
+    localMessages.forEach(message => {
+      if (message.recipientEmail === 'admin@example.com' && !message.read) {
+        counts[message.senderEmail] = (counts[message.senderEmail] || 0) + 1;
+      }
+      
+      // Track last message timestamp for sorting
+      const timestamp = message.timestamp instanceof Date ? message.timestamp : message.timestamp?.toDate();
+      if (timestamp) {
+        userLastMessages[message.senderEmail] = Math.max(
+          userLastMessages[message.senderEmail] || 0,
+          timestamp.getTime()
+        );
+      }
+    });
+
+    setUnreadCounts(counts);
+  }, [localMessages]);
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
     
@@ -43,6 +67,7 @@ const MessageManagement = ({ messages = [], users = [], fetchData, showToast }) 
         sender: 'Admin',
         recipient: 'User',
         timestamp: new Date(),
+        read: false
       };
 
       const docRef = await addDoc(collection(db, 'messages'), {
@@ -59,6 +84,35 @@ const MessageManagement = ({ messages = [], users = [], fetchData, showToast }) 
     }
   };
 
+  const markMessagesAsRead = async (userEmail) => {
+    try {
+      const userMessages = localMessages.filter(
+        msg => msg.senderEmail === userEmail && !msg.read
+      );
+
+      // Update messages in Firebase
+      const updatePromises = userMessages.map(msg =>
+        updateDoc(doc(db, 'messages', msg.id), { read: true })
+      );
+      await Promise.all(updatePromises);
+
+      // Update local state
+      setLocalMessages(prev =>
+        prev.map(msg =>
+          msg.senderEmail === userEmail ? { ...msg, read: true } : msg
+        )
+      );
+
+      // Update unread counts
+      setUnreadCounts(prev => ({
+        ...prev,
+        [userEmail]: 0
+      }));
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
+    }
+  };
+
   const formatTimestamp = (timestamp) => {
     if (!timestamp) return '';
     const date = timestamp instanceof Date ? timestamp : timestamp.toDate();
@@ -70,7 +124,35 @@ const MessageManagement = ({ messages = [], users = [], fetchData, showToast }) 
     });
   };
 
-  const filteredUsers = users.filter(user =>
+  // Sort users based on their last message timestamp
+  const sortedUsers = [...users].sort((a, b) => {
+    const aLastMessage = localMessages
+      .filter(msg => msg.senderEmail === a.email || msg.recipientEmail === a.email)
+      .sort((m1, m2) => {
+        const t1 = m1.timestamp instanceof Date ? m1.timestamp : m1.timestamp?.toDate();
+        const t2 = m2.timestamp instanceof Date ? m2.timestamp : m2.timestamp?.toDate();
+        return t2 - t1;
+      })[0];
+
+    const bLastMessage = localMessages
+      .filter(msg => msg.senderEmail === b.email || msg.recipientEmail === b.email)
+      .sort((m1, m2) => {
+        const t1 = m1.timestamp instanceof Date ? m1.timestamp : m1.timestamp?.toDate();
+        const t2 = m2.timestamp instanceof Date ? m2.timestamp : m2.timestamp?.toDate();
+        return t2 - t1;
+      })[0];
+
+    if (!aLastMessage && !bLastMessage) return 0;
+    if (!aLastMessage) return 1;
+    if (!bLastMessage) return -1;
+
+    const aTime = aLastMessage.timestamp instanceof Date ? aLastMessage.timestamp : aLastMessage.timestamp?.toDate();
+    const bTime = bLastMessage.timestamp instanceof Date ? bLastMessage.timestamp : bLastMessage.timestamp?.toDate();
+    
+    return bTime - aTime;
+  });
+
+  const filteredUsers = sortedUsers.filter(user =>
     (user.fullName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
     (user.email?.toLowerCase() || '').includes(searchTerm.toLowerCase())
   );
@@ -127,6 +209,7 @@ const MessageManagement = ({ messages = [], users = [], fetchData, showToast }) 
                 onClick={() => {
                   setSelectedUser(user);
                   setIsMobileMenuOpen(false);
+                  markMessagesAsRead(user.email);
                 }}
                 className={`
                   flex items-center gap-3 p-3 cursor-pointer
@@ -141,9 +224,16 @@ const MessageManagement = ({ messages = [], users = [], fetchData, showToast }) 
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 truncate">
-                    {user.fullName || 'Unnamed User'}
-                  </p>
+                  <div className="flex justify-between items-center">
+                    <p className="font-medium text-gray-900 truncate">
+                      {user.fullName || 'Unnamed User'}
+                    </p>
+                    {unreadCounts[user.email] > 0 && (
+                      <span className="bg-blue-600 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
+                        {unreadCounts[user.email]}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-sm text-gray-500 truncate">{user.email}</p>
                 </div>
               </div>

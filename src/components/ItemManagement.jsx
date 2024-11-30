@@ -1,25 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { Edit, Trash2, Eye, Search, MapPin, Bell } from 'lucide-react';
+import { Edit, Trash2, Eye, Search, MapPin } from 'lucide-react';
 import { 
   doc, 
   updateDoc, 
   getDoc, 
-  collection, 
-  addDoc,
   deleteDoc, 
   serverTimestamp,
   onSnapshot,
   query,
-  orderBy 
+  orderBy,
+  collection 
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import ClaimDetailsModal from './ClaimDetailsModal';
 
-const ItemManagement = ({ onAddItem, onEditItem }) => {
+const ItemManagement = ({ onAddItem, onEditItem, currentUser }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
   const [activeTab, setActiveTab] = useState('available');
-  const [showNotifications, setShowNotifications] = useState(false);
   const [claimDetailsModal, setClaimDetailsModal] = useState(null);
   const [toast, setToast] = useState(null);
   const [items, setItems] = useState([]);
@@ -56,7 +54,6 @@ const ItemManagement = ({ onAddItem, onEditItem }) => {
 
   const handleDeleteItem = async (itemId) => {
     try {
-      // Check if the item exists
       const itemRef = doc(db, 'items', itemId);
       const itemSnap = await getDoc(itemRef);
       
@@ -65,7 +62,6 @@ const ItemManagement = ({ onAddItem, onEditItem }) => {
         return;
       }
 
-      // If the item has claims, delete them first
       const itemData = itemSnap.data();
       if (itemData.claims && itemData.claims.length > 0) {
         for (const claimId of itemData.claims) {
@@ -74,10 +70,7 @@ const ItemManagement = ({ onAddItem, onEditItem }) => {
         }
       }
 
-      // Delete the item document
       await deleteDoc(itemRef);
-
-      // Show success message
       showToast('Item deleted successfully', 'success');
 
     } catch (error) {
@@ -85,17 +78,6 @@ const ItemManagement = ({ onAddItem, onEditItem }) => {
       showToast('Error deleting item', 'error');
     }
   };
-
-  const filteredItems = items.filter(item => {
-    const matchesSearch = (item.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-      (item.details?.toLowerCase() || '').includes(searchTerm.toLowerCase());
-    const matchesCategory = filterCategory === '' || filterCategory === 'All Categories' ||
-      item.category === filterCategory;
-    const matchesStatus = activeTab === 'available' ? item.status === 'unclaimed' :
-      activeTab === 'pending' ? item.status === 'pending_claim' :
-      item.status === 'claimed';
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
 
   const handleClaimAction = async (action, itemId, claimId) => {
     try {
@@ -116,15 +98,6 @@ const ItemManagement = ({ onAddItem, onEditItem }) => {
           lastUpdated: serverTimestamp()
         });
 
-        await addDoc(collection(db, 'notifications'), {
-          type: 'claim_approved',
-          itemId,
-          claimId,
-          timestamp: serverTimestamp(),
-          read: false,
-          userId: claimDetailsModal.claim.userId
-        });
-
         showToast('Claim approved successfully', 'success');
       } else {
         await updateDoc(itemRef, {
@@ -140,15 +113,6 @@ const ItemManagement = ({ onAddItem, onEditItem }) => {
           lastUpdated: serverTimestamp()
         });
 
-        await addDoc(collection(db, 'notifications'), {
-          type: 'claim_rejected',
-          itemId,
-          claimId,
-          timestamp: serverTimestamp(),
-          read: false,
-          userId: claimDetailsModal.claim.userId
-        });
-
         showToast('Claim rejected successfully', 'success');
       }
 
@@ -158,6 +122,17 @@ const ItemManagement = ({ onAddItem, onEditItem }) => {
       showToast(`Error ${action}ing claim`, 'error');
     }
   };
+
+  const filteredItems = items.filter(item => {
+    const matchesSearch = (item.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+      (item.details?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+    const matchesCategory = filterCategory === '' || filterCategory === 'All Categories' ||
+      item.category === filterCategory;
+    const matchesStatus = activeTab === 'available' ? item.status === 'unclaimed' :
+      activeTab === 'pending' ? item.status === 'pending_claim' :
+      item.status === 'claimed';
+    return matchesSearch && matchesCategory && matchesStatus;
+  });
 
   const viewClaimDetails = async (item) => {
     try {
@@ -188,30 +163,12 @@ const ItemManagement = ({ onAddItem, onEditItem }) => {
       )}
 
       <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={onAddItem}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors"
-          >
-            Add New Item
-          </button>
-          <div className="relative">
-            <button
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="p-2 rounded-full hover:bg-gray-100 relative"
-            >
-              <Bell className="h-6 w-6" />
-            </button>
-            {showNotifications && (
-              <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg z-10">
-                <div className="p-2">
-                  <h3 className="font-semibold mb-2">Notifications</h3>
-                  <p className="text-gray-500 text-sm">No new notifications</p>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+        <button
+          onClick={onAddItem}
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors"
+        >
+          Add New Item
+        </button>
 
         <div className="flex flex-col md:flex-row md:items-center md:space-x-4 space-y-2 md:space-y-0">
           <div className="flex-1 relative">
