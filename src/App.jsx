@@ -16,8 +16,15 @@ const App = () => {
   const [user, setUser] = useState(null);
   const [userRole, setUserRole] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [backendMessage, setBackendMessage] = useState('');  // New state to store backend message
 
   useEffect(() => {
+    // Fetch message from Flask backend
+    fetch('http://127.0.0.1:5000/api/hello')  // Flask API endpoint
+      .then((response) => response.json())
+      .then((data) => setBackendMessage(data.message))  // Store the message in state
+      .catch((error) => console.error('Error fetching data from backend:', error));
+
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
@@ -60,35 +67,42 @@ const App = () => {
   return (
     <Router basename="/">
       <div className="min-h-screen bg-gray-100">
+        <div className="text-center py-4">
+          {/* Display the backend message */}
+          {backendMessage && <p className="text-xl font-semibold text-green-600">{backendMessage}</p>}
+        </div>
+
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
           <Route path="/register" element={<RegisterPage />} />
-          <Route 
-            path="/dashboard" 
+          <Route
+            path="/dashboard"
             element={
-              user && userRole === 'user' 
-                ? <UserDashboard user={user} onLogout={handleLogout} /> 
-                : <Navigate to="/login" />
-            } 
+              user && userRole === 'user' ? (
+                <UserDashboard user={user} onLogout={handleLogout} />
+              ) : (
+                <Navigate to="/login" />
+              )
+            }
           />
-          <Route 
-            path="/profile" 
+          <Route
+            path="/profile"
+            element={user ? <UserProfile user={user} /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/admin"
             element={
-              user ? <UserProfile user={user} /> : <Navigate to="/login" />
-            } 
+              user && userRole === 'admin' ? (
+                <AdminDashboard onLogout={handleLogout} />
+              ) : (
+                <Navigate to="/login" />
+              )
+            }
           />
-          <Route 
-            path="/admin" 
-            element={
-              user && userRole === 'admin' 
-                ? <AdminDashboard onLogout={handleLogout} /> 
-                : <Navigate to="/login" />
-            } 
-          />
-          <Route 
-            path="/item/:id" 
-            element={user ? <ItemDetail currentUser={user} /> : <Navigate to="/login" />} 
+          <Route
+            path="/item/:id"
+            element={user ? <ItemDetail currentUser={user} /> : <Navigate to="/login" />}
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
