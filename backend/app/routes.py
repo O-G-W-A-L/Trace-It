@@ -1,35 +1,58 @@
 from flask import Blueprint, jsonify, request
-from app.auth import verify_token
-from app.firestore import get_user_role
+from app.auth import verify_token, require_role
+from app.firestore import get_user_role, save_user_data
 
-# Blueprint for API routes
 api_routes = Blueprint("api_routes", __name__)
 
-@api_routes.route("/hello", methods=["GET"])
-def hello_world():
-    """
-    Test route to confirm API is working.
-    """
-    return jsonify({"message": "Hello, world! The backend is working."}), 200
-
-@api_routes.route("/get_user_role", methods=["GET"])
+@api_routes.route("/login", methods=["POST"])
 @verify_token
-def user_role():
+def login_user():
     """
-    Route to fetch the role of a user from Firestore.
-    Requires a valid Firebase authentication token.
+    Endpoint to handle user login.
+    Validates the Firebase ID token and returns the user's role.
     """
-    uid = request.user["uid"]  # Extract user ID from decoded token
-    role = get_user_role(uid)
-    if role:
-        return jsonify({"role": role}), 200
-    return jsonify({"error": "Role not found"}), 404
+    try:
+        user = request.user
+        user_id = user["uid"]
 
-@api_routes.route("/protected", methods=["GET"])
+        # Retrieve the user's role from Firestore
+        role = get_user_role(user_id)
+        if not role:
+            return jsonify({"error": "User role not found"}), 404
+
+        return jsonify({"message": "Login successful", "role": role}), 200
+    except Exception as e:
+        return jsonify({"error": "Login failed", "details": str(e)}), 500
+
+@api_routes.route("/register", methods=["POST"])
 @verify_token
-def protected():
+def register_user():
     """
-    Example of a protected route that requires authentication.
+    Endpoint to handle user registration.
+    Saves user data to Firestore.
     """
-    user = request.user
-    return jsonify({"message": f"Welcome, {user['email']}!", "uid": user["uid"]}), 200
+    try:
+        data = request.get_json()
+        uid = data.get("uid")
+        user_data = data.get("userData")
+
+        if not uid or not user_data:
+            return jsonify({"error": "Invalid input"}), 400
+
+        success = save_user_data(uid, user_data)
+        if not success:
+            return jsonify({"error": "Failed to save user data"}), 500
+
+        return jsonify({"message": "User registered successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": "Registration failed", "details": str(e)}), 500
+
+@api_routes.route("/admin/users", methods=["GET"])
+@verify_token
+@require_role("admin")
+def get_users():
+    """
+    Admin-only route to fetch all users.
+    """
+    # Implement logic to retrieve all users from Firestore
+    return jsonify({"message": "Admin access granted"}), 200

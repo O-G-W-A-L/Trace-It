@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, jsonify
 from flask_cors import CORS
 from app.routes import api_routes
 
@@ -12,9 +12,14 @@ def create_app():
     # Register blueprints
     app.register_blueprint(api_routes, url_prefix="/api")
 
-    # Root route
-    @app.route("/", methods=["GET"])
-    def home():
-        return {"message": "Welcome to the Trace-It backend!"}, 200
+    # Error handler for 404
+    @app.errorhandler(404)
+    def not_found_error(error):
+        return jsonify({"error": "Not Found"}), 404
+
+    # Error handler for general exceptions
+    @app.errorhandler(Exception)
+    def internal_server_error(error):
+        return jsonify({"error": "Internal Server Error", "details": str(error)}), 500
 
     return app
