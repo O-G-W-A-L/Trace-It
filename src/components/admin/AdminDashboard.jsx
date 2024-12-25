@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
-import { db } from '../firebase/config';
+import { db } from '../../firebase/config';
 import Sidebar from './Sidebar';
 import ItemManagement from './ItemManagement';
 import UserManagement from './UserManagement';

@@ -11,7 +11,7 @@ import {
   orderBy,
   collection 
 } from 'firebase/firestore';
-import { db } from '../firebase/config';
+import { db } from '../../firebase/config';
 import ClaimDetailsModal from './ClaimDetailsModal';
 
 const ItemManagement = ({ onAddItem, onEditItem, currentUser }) => {

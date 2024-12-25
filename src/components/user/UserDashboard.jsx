@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, User, MapPin, LogOut, MessageCircle, X, Bell, Settings, Plus, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, User, MapPin, LogOut, MessageCircle, X, Bell, Settings, ChevronDown, ChevronUp } from 'lucide-react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../firebase/config';
+import { db } from '../../firebase/config';
 import MessagePanel from './MessagesPanel';
 
 const UserDashboard = ({ user, onLogout }) => {
@@ -26,18 +26,18 @@ const UserDashboard = ({ user, onLogout }) => {
       if (activeCategory === 'All') {
         itemsQuery = query(
           collection(db, 'items'),
-          where('status', '!=', 'deleted')
+          where('status', '==', 'unclaimed') // Only fetch unclaimed items
         );
       } else {
         itemsQuery = query(
           collection(db, 'items'),
           where('category', '==', activeCategory),
-          where('status', '!=', 'deleted')
+          where('status', '==', 'unclaimed') // Only fetch unclaimed items for the active category
         );
       }
-      
+
       const querySnapshot = await getDocs(itemsQuery);
-      const fetchedItems = querySnapshot.docs.map(doc => {
+      const fetchedItems = querySnapshot.docs.map((doc) => {
         const data = doc.data();
         return {
           id: doc.id,
@@ -58,23 +58,27 @@ const UserDashboard = ({ user, onLogout }) => {
     return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 
-  const filteredItems = useMemo(() => 
-    items.filter(item =>
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.details?.toLowerCase().includes(searchQuery.toLowerCase())
-    ),
+  const filteredItems = useMemo(
+    () =>
+      items.filter((item) =>
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.details?.toLowerCase().includes(searchQuery.toLowerCase())
+      ),
     [items, searchQuery]
   );
 
-  const stats = useMemo(() => ({
-    total: items.length,
-    unclaimed: items.filter(item => item.status === 'unclaimed').length,
-    claimed: items.filter(item => item.status === 'claimed').length,
-  }), [items]);
+  const stats = useMemo(
+    () => ({
+      total: items.length,
+      unclaimed: items.filter((item) => item.status === 'unclaimed').length,
+      claimed: items.filter((item) => item.status === 'claimed').length,
+    }),
+    [items]
+  );
 
   return (
     <div className="min-h-screen bg-gray-100">

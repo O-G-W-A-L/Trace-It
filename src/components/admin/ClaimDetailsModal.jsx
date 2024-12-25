@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, MessageCircle, Truck } from 'lucide-react';
-import { collection, addDoc, serverTimestamp, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
-import { db } from '../firebase/config';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db } from '../../firebase/config';
+import { handleClaimAction, handleAdditionalActions } from './PaymentActions';
 
 const ClaimDetailsModal = ({ claim, item, onClose, onClaimAction }) => {
   const [allClaims, setAllClaims] = useState([]);
@@ -33,156 +34,18 @@ const ClaimDetailsModal = ({ claim, item, onClose, onClaimAction }) => {
     fetchAllClaims();
   }, [item.id, claim.id]);
 
-  const sendAutomaticMessage = async (action, userEmail) => {
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('email', '==', userEmail));
-    const userSnapshot = await getDocs(q);
-
-    let messageContent;
-    
-    switch(action) {
-      case 'approve':
-        messageContent = `Your claim for ${item.name} has been approved. 
-
-Payment Details:
-- Amount: UGX ${claim.deliveryFee?.toLocaleString()}
-- Payment Methods:
-  1. Mobile Money: 0777123456 (MTN)
-  2. Airtel Money: 0703291529 (AIRTEL) 
-  3. Bank Transfer: ACC# 1234567890 (Stanbic Bank)
-
-Please complete the payment within 48 hours to proceed with delivery. Include your claim reference number ${claim.id} in the payment description.
-
-Location for pickup/delivery will be communicated once payment is confirmed.`;
-        break;
-
-      case 'reject':
-        messageContent = `Your claim for ${item.name} has been reviewed and could not be approved at this time.
-
-You can:
-1. Submit additional proof or documentation
-2. Update your claim details
-3. Contact support for assistance
-
-Your claim reference number is ${claim.id}. You're welcome to submit a new claim with updated information.`;
-        break;
-
-      case 'payment_reminder':
-        messageContent = `Reminder: Payment pending for ${item.name}
-Please complete your payment within the next 24 hours to secure your claim.`;
-        break;
-
-      case 'payment_received':
-        messageContent = `Payment confirmed for ${item.name}
-We'll process your delivery/pickup details shortly.`;
-        break;
-
-      case 'verification_needed':
-        messageContent = `Additional verification needed for ${item.name}
-Please provide the requested documentation within 48 hours.`;
-        break;
-
-      case 'delivery_scheduled':
-        messageContent = `Delivery scheduled for ${item.name}
-Our team will contact you with specific timing details.`;
-        break;
-
-      default:
-        messageContent = `Update regarding your claim for ${item.name}:
-Please check your dashboard for more details or contact support for assistance.`;
-    }
-
-    try {
-      await addDoc(collection(db, 'messages'), {
-        content: messageContent,
-        senderEmail: 'admin@example.com',
-        recipientEmail: userEmail,
-        sender: 'Admin',
-        recipient: 'User',
-        senderName: 'Admin',
-        timestamp: serverTimestamp(),
-        messageType: action,
-        claimId: claim.id,
-        itemId: item.id
-      });
-
-      if (!userSnapshot.empty) {
-        const userData = userSnapshot.docs[0].data();
-        // Add notification logic here if needed
-      }
-
-    } catch (error) {
-      console.error('Error sending automatic message:', error);
-    }
-  };
-
-  const handleClaimAction = async (action, itemId, claimId) => {
-    try {
-      const currentClaim = allClaims[currentClaimIndex];
-      await sendAutomaticMessage(action, currentClaim.userEmail);
-      
-      if (action === 'approve') {
-        const itemRef = doc(db, 'items', itemId);
-        await updateDoc(itemRef, { 
-          status: 'claimed',
-          claimedBy: currentClaim.userEmail,
-          claimDate: serverTimestamp()
-        });
-        
-        // Update other claims to rejected only when approving
-        const rejectPromises = allClaims
-          .filter(c => c.id !== claimId && c.status === 'pending')
-          .map(async (claimToReject) => {
-            const claimRef = doc(db, 'claims', claimToReject.id);
-            await updateDoc(claimRef, { status: 'rejected' });
-            await sendAutomaticMessage('reject', claimToReject.userEmail);
-          });
-
-        await Promise.all(rejectPromises);
-      }
-
-      const claimRef = doc(db, 'claims', claimId);
-      await updateDoc(claimRef, { 
-        status: action === 'approve' ? 'approved' : 'rejected',
-        actionDate: serverTimestamp(),
-        canReclaim: action === 'reject' ? true : false // Allow reclaiming if rejected
-      });
-
+  const handleClaimActionWrapper = async (action, itemId, claimId) => {
+    const currentClaim = allClaims[currentClaimIndex];
+    const result = await handleClaimAction(action, itemId, claimId, allClaims, currentClaim);
+    if (result.success) {
+      setAllClaims(result.updatedClaims);
       await onClaimAction(action, itemId, claimId);
-      
-      // Update local state while keeping other claims active
-      const updatedClaims = allClaims.map(c => {
-        if (c.id === claimId) {
-          return { 
-            ...c, 
-            status: action === 'approve' ? 'approved' : 'rejected',
-            canReclaim: action === 'reject' ? true : false
-          };
-        }
-        if (action === 'approve') {
-          return { ...c, status: 'rejected' };
-        }
-        return c;
-      });
-      setAllClaims(updatedClaims);
-    } catch (error) {
-      console.error('Error handling claim action:', error);
     }
   };
 
-  const handleAdditionalActions = async (action) => {
-    try {
-      const currentClaim = allClaims[currentClaimIndex];
-      await sendAutomaticMessage(action, currentClaim.userEmail);
-      
-      const claimRef = doc(db, 'claims', currentClaim.id);
-      await updateDoc(claimRef, { 
-        lastAction: action,
-        lastActionDate: serverTimestamp()
-      });
-    } catch (error) {
-      console.error('Error handling additional action:', error);
-    }
+  const handleAdditionalActionsWrapper = async (action) => {
+    const currentClaim = allClaims[currentClaimIndex];
+    await handleAdditionalActions(action, currentClaim, item);
   };
 
   const navigateClaims = (direction) => {
@@ -276,28 +139,28 @@ Please check your dashboard for more details or contact support for assistance.`
               <h3 className="font-semibold text-lg mb-3">Additional Actions</h3>
               <div className="space-y-2">
                 <button
-                  onClick={() => handleAdditionalActions('payment_reminder')}
+                  onClick={() => handleAdditionalActionsWrapper('payment_reminder')}
                   className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 mb-2"
                   disabled={currentClaim.status !== 'approved'}
                 >
                   Send Payment Reminder
                 </button>
                 <button
-                  onClick={() => handleAdditionalActions('payment_received')}
+                  onClick={() => handleAdditionalActionsWrapper('payment_received')}
                   className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 mb-2"
                   disabled={currentClaim.status !== 'approved'}
                 >
                   Confirm Payment Received
                 </button>
                 <button
-                  onClick={() => handleAdditionalActions('verification_needed')}
+                  onClick={() => handleAdditionalActionsWrapper('verification_needed')}
                   className="w-full px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 mb-2"
                   disabled={currentClaim.status !== 'pending'}
                 >
                   Request Verification
                 </button>
                 <button
-                  onClick={() => handleAdditionalActions('delivery_scheduled')}
+                  onClick={() => handleAdditionalActionsWrapper('delivery_scheduled')}
                   className="w-full px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600"
                   disabled={currentClaim.status !== 'approved'}
                 >
@@ -352,14 +215,14 @@ Please check your dashboard for more details or contact support for assistance.`
             Close
           </button>
           <button
-            onClick={() => handleClaimAction('reject', item.id, currentClaim.id)}
+            onClick={() => handleClaimActionWrapper('reject', item.id, currentClaim.id)}
             disabled={currentClaim.status !== 'pending'}
             className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50"
           >
             Reject Claim
           </button>
           <button
-            onClick={() => handleClaimAction('approve', item.id, currentClaim.id)}
+            onClick={() => handleClaimActionWrapper('approve', item.id, currentClaim.id)}
             disabled={currentClaim.status !== 'pending' || item.status === 'claimed'}
             className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50"
           >
@@ -372,3 +235,4 @@ Please check your dashboard for more details or contact support for assistance.`
 };
 
 export default ClaimDetailsModal;
+

@@ -6,21 +6,21 @@ import { getFirestore, doc, getDoc } from 'firebase/firestore';
 import LandingPage from './components/LandingPage';
 import LoginPage from './components/LoginPage';
 import RegisterPage from './components/RegisterPage';
-import UserDashboard from './components/UserDashboard';
-import AdminDashboard from './components/AdminDashboard';
-import ItemDetail from './components/ItemDetail';
-import UserProfile from './components/UserProfile';
+import UserDashboard from './components/user/UserDashboard';
+import AdminDashboard from './components/admin/AdminDashboard';
+import ItemDetail from './components/user/ItemDetail';
+import UserProfile from './components/user/UserProfile';
 import './index.css';
 
 const App = () => {
   const [user, setUser] = useState(null);
   const [userRole, setUserRole] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [backendMessage, setBackendMessage] = useState('');  // New state to store backend message
+  const [backendMessage, setBackendMessage] = useState('');
 
   useEffect(() => {
     // Fetch message from Flask backend
-    fetch('http://127.0.0.1:5000/api/hello')  // Flask API endpoint
+    fetch('http://127.0.0.1:5000/api/hello')
       .then((response) => response.json())
       .then((data) => setBackendMessage(data.message))  // Store the message in state
       .catch((error) => console.error('Error fetching data from backend:', error));

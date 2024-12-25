@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db, storage } from '../firebase/config';
+import { db, storage } from '../../firebase/config';
 
 const AddItemModal = ({ isOpen, onClose, onAddItem }) => {
   const initialState = {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { doc, deleteDoc } from 'firebase/firestore';
-import { db } from '../firebase/config';
+import { db } from '../../firebase/config';
 
 const UserManagement = ({ users, fetchData, showToast }) => {
   const handleDeleteUser = async (userId) => {

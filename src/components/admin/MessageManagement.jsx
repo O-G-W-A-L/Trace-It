@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { collection, addDoc, serverTimestamp, updateDoc, doc } from 'firebase/firestore';
-import { db } from '../firebase/config';
+import { db } from '../../firebase/config';
 import { Send, Search, Menu, X } from 'lucide-react';
 
 const MessageManagement = ({ messages = [], users = [], fetchData, showToast }) => {
