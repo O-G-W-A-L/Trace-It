@@ -4,6 +4,7 @@ import { Search, User, MapPin, LogOut, MessageCircle, X, Bell, Settings, Chevron
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import MessagePanel from './MessagesPanel';
+import Footer from './Footer';
 
 const UserDashboard = ({ user, onLogout }) => {
   const [items, setItems] = useState([]);
@@ -26,13 +27,13 @@ const UserDashboard = ({ user, onLogout }) => {
       if (activeCategory === 'All') {
         itemsQuery = query(
           collection(db, 'items'),
-          where('status', '==', 'unclaimed') // Only fetch unclaimed items
+          where('status', '!=', 'claimed') // Exclude claimed items
         );
       } else {
         itemsQuery = query(
           collection(db, 'items'),
           where('category', '==', activeCategory),
-          where('status', '==', 'unclaimed') // Only fetch unclaimed items for the active category
+          where('status', '!=', 'claimed') // Exclude claimed items for the active category
         );
       }
 
@@ -81,7 +82,7 @@ const UserDashboard = ({ user, onLogout }) => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="bg-gray-100">
       <nav className="bg-white shadow-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
@@ -226,8 +227,10 @@ const UserDashboard = ({ user, onLogout }) => {
           )}
         </div>
       </main>
+      <Footer />
     </div>
   );
 };
 
 export default UserDashboard;
+
