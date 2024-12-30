@@ -22,7 +22,7 @@ const LoginPage = () => {
     try {
       const { user } = await signInWithEmailAndPassword(auth, formData.email, formData.password);
       const idToken = await user.getIdToken();
-      const response = await fetch('http://127.0.0.1:5000/api/login', {
+      const response = await fetch('https://trace-it-backend-iota.vercel.app/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
       });
