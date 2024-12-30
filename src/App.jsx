@@ -20,7 +20,7 @@ const App = () => {
 
   useEffect(() => {
     // Fetch message from Flask backend
-    fetch('http://127.0.0.1:5000/api/hello')
+    fetch('https://trace-it-backend-iota.vercel.app/api/hello')
       .then((response) => response.json())
       .then((data) => setBackendMessage(data.message))  // Store the message in state
       .catch((error) => console.error('Error fetching data from backend:', error));
