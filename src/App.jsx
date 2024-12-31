@@ -18,9 +18,14 @@ const App = () => {
   const [loading, setLoading] = useState(true);
   const [backendMessage, setBackendMessage] = useState('');
 
+  // Determine the fetch URL based on the environment (local vs deployed)
+  const backendUrl = process.env.NODE_ENV === 'development'
+    ? 'http://localhost:5000/api/hello'  // For local testing
+    : 'https://trace-it-backend-iota.vercel.app/api/hello';  // For production
+
   useEffect(() => {
     // Fetch message from Flask backend
-    fetch('https://trace-it-backend-iota.vercel.app/api/hello')
+    fetch(backendUrl)
       .then((response) => response.json())
       .then((data) => setBackendMessage(data.message))  // Store the message in state
       .catch((error) => console.error('Error fetching data from backend:', error));
