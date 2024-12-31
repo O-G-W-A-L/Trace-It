@@ -12,8 +12,12 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
+  const backendURL = process.env.REACT_APP_BACKEND_URL;
+
   const handleChange = (e) => setFormData({ ...formData, [e.target.id]: e.target.value });
-  const handleLogoClick = () => setLogoClicks(prev => (prev === 4 ? (setIsAdminLogin(true), 0) : prev + 1));
+
+  const handleLogoClick = () => setLogoClicks((prev) => (prev === 4 ? (setIsAdminLogin(true), 0) : prev + 1));
+
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
 
   const handleLogin = async (e) => {
@@ -22,15 +26,22 @@ const LoginPage = () => {
     try {
       const { user } = await signInWithEmailAndPassword(auth, formData.email, formData.password);
       const idToken = await user.getIdToken();
-      const response = await fetch('https://trace-it-backend-iota.vercel.app/api/login', {
+
+      const response = await fetch(`${backendURL}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
       });
-      if (!response.ok) throw new Error((await response.json()).error || 'Login failed');
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Login failed');
+      }
+
       const { role } = await response.json();
       navigate(role === 'admin' ? '/admin' : '/dashboard');
     } catch (error) {
-      setError('Invalid email or password');
+      console.error('Login error:', error);
+      setError(error.message || 'Invalid email or password');
     }
   };
 
