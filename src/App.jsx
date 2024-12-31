@@ -20,10 +20,12 @@ const App = () => {
 
   useEffect(() => {
     const fetchBackendMessage = async () => {
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://trace-it-backend-iota.vercel.app';
+      console.log('Using backend URL:', backendUrl);
       try {
-        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/hello`);
+        const response = await fetch(`${backendUrl}/api/hello`);
         if (!response.ok) {
-          const errorText = await response.text(); // Get error details
+          const errorText = await response.text();
           throw new Error(`HTTP Error: ${errorText}`);
         }
         const data = await response.json();
@@ -78,6 +80,7 @@ const App = () => {
     <Router basename="/">
       <div className="min-h-screen bg-gray-100">
         <div className="text-center py-4">
+          {/* Display the backend message */}
           {backendMessage && <p className="text-xl font-semibold text-green-600">{backendMessage}</p>}
         </div>
 
