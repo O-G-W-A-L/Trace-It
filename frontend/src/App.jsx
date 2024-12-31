@@ -16,8 +16,20 @@ const App = () => {
   const [user, setUser] = useState(null);
   const [userRole, setUserRole] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [backendMessage, setBackendMessage] = useState('');
+
+  // Determine the fetch URL based on the environment (local vs deployed)
+  const backendUrl = process.env.NODE_ENV === 'development'
+    ? 'http://localhost:5000/api/hello'  // For local testing
+    : 'https://backend-cyan-six-87.vercel.app/api/hello';  // For production
 
   useEffect(() => {
+    // Fetch message from Flask backend
+    fetch(backendUrl)
+      .then((response) => response.json())
+      .then((data) => setBackendMessage(data.message))  // Store the message in state
+      .catch((error) => console.error('Error fetching data from backend:', error));
+
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
@@ -60,6 +72,11 @@ const App = () => {
   return (
     <Router basename="/">
       <div className="min-h-screen bg-gray-100">
+        <div className="text-center py-4">
+          {/* Display the backend message */}
+          {backendMessage && <p className="text-xl font-semibold text-green-600">{backendMessage}</p>}
+        </div>
+
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
