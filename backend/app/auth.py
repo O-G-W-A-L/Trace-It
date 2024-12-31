@@ -6,7 +6,8 @@ import os
 
 # Initialize Firebase Admin SDK
 if not firebase_admin._apps:
-    cred = credentials.Certificate(os.path.abspath("config/service.json"))
+    cred_path = os.path.abspath("config/service.json")
+    cred = credentials.Certificate(cred_path)
     firebase_admin.initialize_app(cred)
 
 def verify_token(func):

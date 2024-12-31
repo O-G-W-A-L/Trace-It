@@ -8,14 +8,9 @@ api_routes = Blueprint("api_routes", __name__)
 def hello():
     return jsonify({"message": "Hello from the backend!"}), 200
 
-
 @api_routes.route("/login", methods=["POST"])
 @verify_token
 def login_user():
-    """
-    Endpoint to handle user login.
-    Validates the Firebase ID token and returns the user's role.
-    """
     try:
         user = request.user
         user_id = user["uid"]
@@ -32,10 +27,6 @@ def login_user():
 @api_routes.route("/register", methods=["POST"])
 @verify_token
 def register_user():
-    """
-    Endpoint to handle user registration.
-    Saves user data to Firestore.
-    """
     try:
         data = request.get_json()
         uid = data.get("uid")
@@ -56,8 +47,8 @@ def register_user():
 @verify_token
 @require_role("admin")
 def get_users():
-    """
-    Admin-only route to fetch all users.
-    """
-    # Implement logic to retrieve all users from Firestore
-    return jsonify({"message": "Admin access granted"}), 200
+    try:
+        # Implement logic to retrieve all users from Firestore
+        return jsonify({"message": "Admin access granted"}), 200
+    except Exception as e:
+        return jsonify({"error": "Failed to fetch users", "details": str(e)}), 500

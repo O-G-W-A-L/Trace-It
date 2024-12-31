@@ -1,7 +1,6 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
 from app.routes import api_routes
-import os
 
 def create_app():
     """
@@ -11,7 +10,10 @@ def create_app():
 
     # Enable CORS for both localhost and Vercel frontend URLs
     CORS(app, resources={
-        r"/*": {"origins": ["http://localhost:5173", "https://trace-it-tau.vercel.app"], "supports_credentials": True}
+        r"/*": {
+            "origins": ["http://localhost:5173", "https://trace-it-tau.vercel.app"],
+            "supports_credentials": True
+        }
     })
 
     # Register blueprints
