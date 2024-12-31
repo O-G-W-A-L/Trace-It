@@ -1,6 +1,8 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
 from app.routes import api_routes
+from app import create_app
+
 
 def create_app():
     """
