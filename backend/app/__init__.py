@@ -8,9 +8,9 @@ def create_app():
     """
     app = Flask(__name__)
 
-    # Enable CORS with specific settings
+    # Updated CORS settings with new frontend URL
     CORS(app, resources={
-        r"/*": {"origins": ["https://trace-it-nine.vercel.app"], "supports_credentials": True}
+        r"/*": {"origins": ["https://trace-it-tau.vercel.app"], "supports_credentials": True}
     })
 
     # Register blueprints

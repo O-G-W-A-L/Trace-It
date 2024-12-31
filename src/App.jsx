@@ -21,7 +21,7 @@ const App = () => {
   // Determine the fetch URL based on the environment (local vs deployed)
   const backendUrl = process.env.NODE_ENV === 'development'
     ? 'http://localhost:5000/api/hello'  // For local testing
-    : 'https://trace-it-backend-iota.vercel.app/api/hello';  // For production
+    : 'https://backend-pi-eight-82.vercel.app/api/hello';  // For production
 
   useEffect(() => {
     // Fetch message from Flask backend

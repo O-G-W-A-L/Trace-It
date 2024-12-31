@@ -19,7 +19,7 @@ const LoginPage = () => {
   // Determine the fetch URL based on the environment (local vs deployed)
   const backendUrl = process.env.NODE_ENV === 'development'
     ? 'http://localhost:5000/api/login'  // For local testing
-    : 'https://trace-it-backend-iota.vercel.app/api/login';  // For production
+    : 'https://backend-pi-eight-82.vercel.app/api/login';  // For production
 
   const handleLogin = async (e) => {
     e.preventDefault();
