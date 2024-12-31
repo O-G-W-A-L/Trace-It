@@ -61,4 +61,3 @@ def get_users():
     """
     # Implement logic to retrieve all users from Firestore
     return jsonify({"message": "Admin access granted"}), 200
-
