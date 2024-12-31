@@ -1,5 +1,5 @@
 from flask_cors import CORS
-from app import create_app
+from app_files import create_app
 
 # Create the Flask app and enable CORS for specific origins
 app = create_app()

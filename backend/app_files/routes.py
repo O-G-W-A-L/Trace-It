@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
-from app.auth import verify_token, require_role
-from app.firestore import get_user_role, save_user_data
+from app_files.auth import verify_token, require_role
+from app_files.firestore import get_user_role, save_user_data
 
 api_routes = Blueprint("api_routes", __name__)
 

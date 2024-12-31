@@ -1,8 +1,5 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
-from app.routes import api_routes
-from app import create_app
-
 
 def create_app():
     """
@@ -18,7 +15,8 @@ def create_app():
         }
     })
 
-    # Register blueprints
+    # Import and register blueprints locally to avoid circular imports
+    from app_files.routes import api_routes
     app.register_blueprint(api_routes, url_prefix="/api")
 
     # Error handler for 404
