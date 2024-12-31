@@ -4,6 +4,11 @@ from app.firestore import get_user_role, save_user_data
 
 api_routes = Blueprint("api_routes", __name__)
 
+@api_routes.route("/hello", methods=["GET"])
+def hello():
+    return jsonify({"message": "Hello from the backend!"}), 200
+
+
 @api_routes.route("/login", methods=["POST"])
 @verify_token
 def login_user():

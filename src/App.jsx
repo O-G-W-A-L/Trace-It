@@ -19,23 +19,11 @@ const App = () => {
   const [backendMessage, setBackendMessage] = useState('');
 
   useEffect(() => {
-    const fetchBackendMessage = async () => {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://trace-it-backend-iota.vercel.app';
-      console.log('Using backend URL:', backendUrl);
-      try {
-        const response = await fetch(`${backendUrl}/api/hello`);
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`HTTP Error: ${errorText}`);
-        }
-        const data = await response.json();
-        setBackendMessage(data.message);
-      } catch (error) {
-        console.error('Error fetching data from backend:', error);
-      }
-    };
-
-    fetchBackendMessage();
+    // Fetch message from Flask backend
+    fetch('https://trace-it-backend-iota.vercel.app/api/hello')
+      .then((response) => response.json())
+      .then((data) => setBackendMessage(data.message))  // Store the message in state
+      .catch((error) => console.error('Error fetching data from backend:', error));
 
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
