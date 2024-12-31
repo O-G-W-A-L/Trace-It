@@ -19,11 +19,21 @@ const App = () => {
   const [backendMessage, setBackendMessage] = useState('');
 
   useEffect(() => {
-    // Fetch message from Flask backend
-    fetch('https://trace-it-backend-iota.vercel.app/api/hello')
-      .then((response) => response.json())
-      .then((data) => setBackendMessage(data.message))  // Store the message in state
-      .catch((error) => console.error('Error fetching data from backend:', error));
+    const fetchBackendMessage = async () => {
+      try {
+        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/hello`);
+        if (!response.ok) {
+          const errorText = await response.text(); // Get error details
+          throw new Error(`HTTP Error: ${errorText}`);
+        }
+        const data = await response.json();
+        setBackendMessage(data.message);
+      } catch (error) {
+        console.error('Error fetching data from backend:', error);
+      }
+    };
+
+    fetchBackendMessage();
 
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
@@ -68,7 +78,6 @@ const App = () => {
     <Router basename="/">
       <div className="min-h-screen bg-gray-100">
         <div className="text-center py-4">
-          {/* Display the backend message */}
           {backendMessage && <p className="text-xl font-semibold text-green-600">{backendMessage}</p>}
         </div>
 

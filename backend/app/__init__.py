@@ -7,7 +7,11 @@ def create_app():
     Factory function to create and configure the Flask app.
     """
     app = Flask(__name__)
-    CORS(app)  # Enable CORS for all routes
+
+    # Enable CORS with specific settings
+    CORS(app, resources={
+        r"/*": {"origins": ["https://trace-it-nine.vercel.app"], "supports_credentials": True}
+    })
 
     # Register blueprints
     app.register_blueprint(api_routes, url_prefix="/api")
