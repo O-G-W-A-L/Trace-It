@@ -4,6 +4,7 @@ import { Search, User, MapPin, LogOut, MessageCircle, X, Bell, Settings, Chevron
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import MessagePanel from './MessagesPanel';
+import AddItemModal from '../admin/AddItemModal';
 import Footer from './Footer';
 
 const UserDashboard = ({ user, onLogout }) => {
@@ -13,6 +14,7 @@ const UserDashboard = ({ user, onLogout }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isMessagePanelOpen, setIsMessagePanelOpen] = useState(false);
   const [isStatsVisible, setIsStatsVisible] = useState(false);
+  const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
 
   const categories = ['All', 'National IDs', 'Number Plates', 'Driving Permits', 'Academic Documents', 'Other Items'];
 
@@ -52,6 +54,15 @@ const UserDashboard = ({ user, onLogout }) => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleAddItem = () => {
+    setIsAddItemModalOpen(true);
+  };
+
+  const handleItemAdded = () => {
+    setIsAddItemModalOpen(false);
+    fetchItems();
   };
 
   const formatDate = (date) => {
@@ -120,6 +131,15 @@ const UserDashboard = ({ user, onLogout }) => {
       </nav>
 
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={handleAddItem}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700"
+          >
+            Add Item
+          </button>
+        </div>
+
         <div className="flex flex-col md:flex-row">
           <div className={`flex-1 transition-all ${isMessagePanelOpen ? 'md:mr-96' : ''}`}>
             <div className="px-4 mb-6">
@@ -227,10 +247,17 @@ const UserDashboard = ({ user, onLogout }) => {
           )}
         </div>
       </main>
+
+      <AddItemModal 
+        isOpen={isAddItemModalOpen} 
+        onClose={() => setIsAddItemModalOpen(false)} 
+        onAddItem={handleItemAdded} 
+        currentUser={user} 
+      />
+
       <Footer />
     </div>
   );
 };
 
 export default UserDashboard;
-

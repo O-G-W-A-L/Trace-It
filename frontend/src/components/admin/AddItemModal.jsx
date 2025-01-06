@@ -3,7 +3,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db, storage } from '../../firebase/config';
 
-const AddItemModal = ({ isOpen, onClose, onAddItem }) => {
+const AddItemModal = ({ isOpen, onClose, onAddItem, currentUser }) => {
   const initialState = {
     type: '',
     name: '',
@@ -25,7 +25,7 @@ const AddItemModal = ({ isOpen, onClose, onAddItem }) => {
     'Number Plates',
     'Driving Permits',
     'Academic Documents',
-    'Other Items'
+    'Other Items',
   ];
 
   const handleSubmit = async (e) => {
@@ -34,7 +34,7 @@ const AddItemModal = ({ isOpen, onClose, onAddItem }) => {
 
     try {
       let imageUrl = '';
-      
+
       // Upload image if exists
       if (newItem.image) {
         const storageRef = ref(storage, `items/${Date.now()}_${newItem.image.name}`);
@@ -49,11 +49,12 @@ const AddItemModal = ({ isOpen, onClose, onAddItem }) => {
         status: 'unclaimed',
         createdAt: serverTimestamp(),
         claims: [],
+        addedBy: currentUser ? { id: currentUser.uid, name: currentUser.displayName || 'Unknown User' } : null,
       };
 
       delete itemData.image; // Remove the file object before storing
 
-      const docRef = await addDoc(collection(db, 'items'), itemData);
+      await addDoc(collection(db, 'items'), itemData);
 
       onAddItem(); // Refresh the items list
       setNewItem(initialState);
@@ -91,12 +92,7 @@ const AddItemModal = ({ isOpen, onClose, onAddItem }) => {
     <div className="fixed inset-0 z-50 bg-black bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center backdrop-blur-sm">
       <div 
         className="relative mx-auto p-8 border w-full max-w-md shadow-xl rounded-lg bg-white transform transition-all"
-        style={{
-          maxHeight: '90vh',
-          overflowY: 'auto',
-          marginTop: '2rem',
-          marginBottom: '2rem'
-        }}
+        style={{ maxHeight: '90vh', overflowY: 'auto', marginTop: '2rem', marginBottom: '2rem' }}
       >
         <div className="absolute top-4 right-4 z-50">
           <button
