@@ -11,26 +11,11 @@ import {
 import { db } from '../../firebase/config';
 
 const REGIONS_AND_DISTRICTS = {
-  Northern: {
-    districts: ['Gulu', 'Kitgum', 'Lira', 'Arua'],
-    baseFee: 15000
-  },
-  Eastern: {
-    districts: ['Jinja', 'Mbale', 'Soroti', 'Tororo'],
-    baseFee: 12000
-  },
-  Southern: {
-    districts: ['Masaka', 'Mbarara', 'Kabale', 'Rukungiri'],
-    baseFee: 13000
-  },
-  Western: {
-    districts: ['Fort Portal', 'Kasese', 'Hoima', 'Masindi'],
-    baseFee: 14000
-  },
-  Central: {
-    districts: ['Kampala', 'Wakiso', 'Mukono', 'Entebbe'],
-    baseFee: 8000
-  }
+  Northern: {districts: ['Gulu', 'Kitgum', 'Lira', 'Arua'], baseFee: 15000},
+  Eastern: {districts: ['Jinja', 'Mbale', 'Soroti', 'Tororo'], baseFee: 12000},
+  Southern: {districts: ['Masaka', 'Mbarara', 'Kabale', 'Rukungiri'], baseFee: 13000},
+  Western: {districts: ['Fort Portal', 'Kasese', 'Hoima', 'Masindi'], baseFee: 14000},
+  Central: {districts: ['Kampala', 'Wakiso', 'Mukono', 'Entebbe'], baseFee: 8000}
 };
 
 const ClaimForm = ({ item, currentUser, onClaimSubmit, onCancel, isLoading, totalClaims }) => {
@@ -39,8 +24,11 @@ const ClaimForm = ({ item, currentUser, onClaimSubmit, onCancel, isLoading, tota
   const [deliveryFee, setDeliveryFee] = useState(0);
   const [claimDetails, setClaimDetails] = useState({
     identificationDetails: '',
-    contactInformation: '',
     additionalNotes: '',
+    dateLost: '',
+    type: '',
+    uniqueIdentifiers: '',
+    locationLost: '',
     deliveryRegion: '',
     deliveryDistrict: '',
     deliveryFee: 0
@@ -70,7 +58,6 @@ const ClaimForm = ({ item, currentUser, onClaimSubmit, onCancel, isLoading, tota
     e.preventDefault();
     
     try {
-      // Create the claim document
       const claim = {
         userId: currentUser.uid,
         userEmail: currentUser.email,
@@ -82,7 +69,6 @@ const ClaimForm = ({ item, currentUser, onClaimSubmit, onCancel, isLoading, tota
 
       const claimRef = await addDoc(collection(db, 'claims'), claim);
 
-      // Update the item document
       const itemRef = doc(db, 'items', item.id);
       await updateDoc(itemRef, {
         status: 'pending_claim',
@@ -91,7 +77,6 @@ const ClaimForm = ({ item, currentUser, onClaimSubmit, onCancel, isLoading, tota
         lastUpdated: serverTimestamp()
       });
 
-      // Create notification
       await addDoc(collection(db, 'notifications'), {
         type: 'new_claim',
         itemId: item.id,
@@ -112,9 +97,76 @@ const ClaimForm = ({ item, currentUser, onClaimSubmit, onCancel, isLoading, tota
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full">
+      <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
         <h2 className="text-xl font-bold mb-4">Claim Form</h2>
         <form onSubmit={handleClaimSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Date Lost
+            </label>
+            <input
+              type="date"
+              required
+              className="w-full border rounded p-2"
+              value={claimDetails.dateLost}
+              onChange={(e) => setClaimDetails({
+                ...claimDetails,
+                dateLost: e.target.value
+              })}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Type
+            </label>
+            <input
+              type="text"
+              required
+              className="w-full border rounded p-2"
+              placeholder="e.g., Electronics, Document, Jewelry..."
+              value={claimDetails.type}
+              onChange={(e) => setClaimDetails({
+                ...claimDetails,
+                type: e.target.value
+              })}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Unique Identifiers
+            </label>
+            <textarea
+              required
+              className="w-full border rounded p-2"
+              rows="3"
+              placeholder="Describe unique features or identifiers of the item..."
+              value={claimDetails.uniqueIdentifiers}
+              onChange={(e) => setClaimDetails({
+                ...claimDetails,
+                uniqueIdentifiers: e.target.value
+              })}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Location Lost
+            </label>
+            <input
+              type="text"
+              required
+              className="w-full border rounded p-2"
+              placeholder="e.g., Kampala, Main Street..."
+              value={claimDetails.locationLost}
+              onChange={(e) => setClaimDetails({
+                ...claimDetails,
+                locationLost: e.target.value
+              })}
+            />
+          </div>
+
           <div>
             <label className="block text-sm font-medium mb-1">
               Identification Details
@@ -128,23 +180,6 @@ const ClaimForm = ({ item, currentUser, onClaimSubmit, onCancel, isLoading, tota
               onChange={(e) => setClaimDetails({
                 ...claimDetails,
                 identificationDetails: e.target.value
-              })}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Contact Information
-            </label>
-            <input
-              type="text"
-              required
-              className="w-full border rounded p-2"
-              placeholder="Phone number or alternative contact..."
-              value={claimDetails.contactInformation}
-              onChange={(e) => setClaimDetails({
-                ...claimDetails,
-                contactInformation: e.target.value
               })}
             />
           </div>
@@ -226,4 +261,3 @@ const ClaimForm = ({ item, currentUser, onClaimSubmit, onCancel, isLoading, tota
 };
 
 export default ClaimForm;
-

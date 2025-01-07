@@ -1,5 +1,6 @@
 import React from 'react';
-import { MapPin, Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
+import { MapPin, Facebook, Twitter as X, Instagram, Linkedin, Github } from 'lucide-react';
+import { FaWhatsapp } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 
 const Footer = () => {
@@ -21,13 +22,19 @@ const Footer = () => {
               <Facebook className="h-5 w-5" />
             </a>
             <a href="#" className="text-gray-400 hover:text-white transition-colors duration-300">
-              <Twitter className="h-5 w-5" />
+              <X className="h-5 w-5" />
             </a>
             <a href="#" className="text-gray-400 hover:text-white transition-colors duration-300">
               <Instagram className="h-5 w-5" />
             </a>
             <a href="#" className="text-gray-400 hover:text-white transition-colors duration-300">
               <Linkedin className="h-5 w-5" />
+            </a>
+            <a href="#" className="text-gray-400 hover:text-white transition-colors duration-300">
+              <FaWhatsapp className="h-5 w-5" />
+            </a>
+            <a href="#" className="text-gray-400 hover:text-white transition-colors duration-300">
+              <Github className="h-5 w-5" />
             </a>
           </div>
           <div className="w-full md:w-auto">
