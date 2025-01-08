@@ -2,12 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { MapPin, MessageCircle, Truck } from 'lucide-react';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../../firebase/config';
-import { handleClaimAction, handleAdditionalActions } from './PaymentActions';
+import { handleClaimAction, handleAdditionalActions } from './PaymentActions'; // Ensure this is imported
 
 const ClaimDetailsModal = ({ claim, item, onClose, onClaimAction }) => {
   const [allClaims, setAllClaims] = useState([]);
   const [currentClaimIndex, setCurrentClaimIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [showClaimantDetails, setShowClaimantDetails] = useState(false);
+  const [showItemDetails, setShowItemDetails] = useState(false);
+  const [showAdditionalActionsModal, setShowAdditionalActionsModal] = useState(false); // For the additional actions modal
 
   useEffect(() => {
     const fetchAllClaims = async () => {
@@ -46,6 +49,7 @@ const ClaimDetailsModal = ({ claim, item, onClose, onClaimAction }) => {
   const handleAdditionalActionsWrapper = async (action) => {
     const currentClaim = allClaims[currentClaimIndex];
     await handleAdditionalActions(action, currentClaim, item);
+    setShowAdditionalActionsModal(false); // Close the modal after action is taken
   };
 
   const navigateClaims = (direction) => {
@@ -53,6 +57,14 @@ const ClaimDetailsModal = ({ claim, item, onClose, onClaimAction }) => {
     if (newIndex >= 0 && newIndex < allClaims.length) {
       setCurrentClaimIndex(newIndex);
     }
+  };
+
+  const handleClaimantDetailsClick = () => {
+    setShowClaimantDetails(!showClaimantDetails);
+  };
+
+  const handleItemDetailsClick = () => {
+    setShowItemDetails(!showItemDetails); 
   };
 
   const currentClaim = allClaims[currentClaimIndex] || claim;
@@ -125,114 +137,124 @@ const ClaimDetailsModal = ({ claim, item, onClose, onClaimAction }) => {
           <div className="space-y-4">
             <div className="bg-gray-50 p-4 rounded-lg">
               <h3 className="font-semibold text-lg mb-3">Item Details</h3>
-              <div className="space-y-2">
+              <div 
+                className="cursor-pointer hover:bg-gray-100 p-2 rounded-lg"
+                onClick={handleItemDetailsClick} 
+              >
                 <p><span className="font-medium">Name:</span> {item.name}</p>
                 <p><span className="font-medium">Category:</span> {item.category}</p>
                 <div className="flex items-start">
                   <MapPin className="w-4 h-4 mt-1 mr-2 text-gray-500" />
                   <p><span className="font-medium">Location Found:</span> {item.location}</p>
                 </div>
+                {showItemDetails && (
+                  <div className="space-y-2 mt-3">
+                    <p><span className="font-medium">Date Found:</span> {item.dateFound}</p>
+                    <p><span className="font-medium">Unique Identifiers:</span> {item.uniqueIdentifiers}</p>
+                  </div>
+                )}
               </div>
             </div>
 
             <div className="bg-gray-50 p-4 rounded-lg">
               <h3 className="font-semibold text-lg mb-3">Additional Actions</h3>
-              <div className="space-y-2">
-                <button
-                  onClick={() => handleAdditionalActionsWrapper('payment_reminder')}
-                  className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 mb-2"
-                  disabled={currentClaim.status !== 'approved'}
-                >
-                  Send Payment Reminder
-                </button>
-                <button
-                  onClick={() => handleAdditionalActionsWrapper('payment_received')}
-                  className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 mb-2"
-                  disabled={currentClaim.status !== 'approved'}
-                >
-                  Confirm Payment Received
-                </button>
-                <button
-                  onClick={() => handleAdditionalActionsWrapper('verification_needed')}
-                  className="w-full px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 mb-2"
-                  disabled={currentClaim.status !== 'pending'}
-                >
-                  Request Verification
-                </button>
-                <button
-                  onClick={() => handleAdditionalActionsWrapper('delivery_scheduled')}
-                  className="w-full px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600"
-                  disabled={currentClaim.status !== 'approved'}
-                >
-                  Send Delivery Details
-                </button>
-              </div>
+              <button
+                onClick={() => setShowAdditionalActionsModal(true)} // Show the modal when clicked
+                className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+              >
+                Open Additional Actions
+              </button>
             </div>
           </div>
 
           <div className="space-y-4">
             <div className="bg-gray-50 p-4 rounded-lg">
               <h3 className="font-semibold text-lg mb-3">Claimant Details</h3>
-              <div className="space-y-2">
+              <div 
+                className="cursor-pointer hover:bg-gray-100 p-2 rounded-lg"
+                onClick={handleClaimantDetailsClick}
+              >
                 <p><span className="font-medium">Email:</span> {currentClaim.userEmail}</p>
-                <p><span className="font-medium">Contact:</span> {currentClaim.contactInformation}</p>
                 <div className="flex items-start">
-                  <MessageCircle className="w-4 h-4 mt-1 mr-2 text-gray-500" />
-                  <div>
-                    <p className="font-medium">Identification Details:</p>
-                    <p className="text-gray-600">{currentClaim.identificationDetails}</p>
+                  <Truck className="w-4 h-4 mt-1 mr-2 text-gray-500" />
+                  <p><span className="font-medium">Address:</span> {currentClaim.address}</p>
+                </div>
+                {showClaimantDetails && (
+                  <div className="space-y-2 mt-3">
+                    <p><span className="font-medium">Phone:</span> {currentClaim.phone}</p>
                   </div>
-                </div>
+                )}
               </div>
             </div>
 
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-lg mb-3">Delivery Information</h3>
-              <div className="space-y-2">
-                <p><span className="font-medium">Region:</span> {currentClaim.deliveryRegion}</p>
-                <p><span className="font-medium">District:</span> {currentClaim.deliveryDistrict}</p>
-                <div className="flex items-center">
-                  <Truck className="w-4 h-4 mr-2 text-gray-500" />
-                  <p><span className="font-medium">Delivery Fee:</span> UGX {currentClaim.deliveryFee?.toLocaleString()}</p>
-                </div>
-              </div>
+            <div className="space-y-2">
+              <button
+                onClick={() => handleClaimActionWrapper('approve', item.id, currentClaim.id)}
+                className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                disabled={currentClaim.status === 'approved'}
+              >
+                Approve Claim
+              </button>
+              <button
+                onClick={() => handleClaimActionWrapper('reject', item.id, currentClaim.id)}
+                className="w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                disabled={currentClaim.status === 'rejected'}
+              >
+                Reject Claim
+              </button>
+              <button
+                onClick={onClose}
+                className="w-full px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+              >
+                Close
+              </button>
             </div>
-
-            {currentClaim.additionalNotes && (
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h3 className="font-semibold text-lg mb-2">Additional Notes</h3>
-                <p className="text-gray-600">{currentClaim.additionalNotes}</p>
-              </div>
-            )}
           </div>
         </div>
 
-        <div className="flex justify-end space-x-3 mt-6">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-50"
-          >
-            Close
-          </button>
-          <button
-            onClick={() => handleClaimActionWrapper('reject', item.id, currentClaim.id)}
-            disabled={currentClaim.status !== 'pending'}
-            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50"
-          >
-            Reject Claim
-          </button>
-          <button
-            onClick={() => handleClaimActionWrapper('approve', item.id, currentClaim.id)}
-            disabled={currentClaim.status !== 'pending' || item.status === 'claimed'}
-            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50"
-          >
-            Approve Claim
-          </button>
-        </div>
+        {/* Modal for Additional Actions */}
+        {showAdditionalActionsModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60">
+            <div className="bg-white p-6 rounded-lg w-full max-w-md space-y-4">
+              <h3 className="text-xl font-bold">Choose an Action</h3>
+              <div className="space-y-2">
+                <button
+                  onClick={() => handleAdditionalActionsWrapper('payment_reminder')}
+                  className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                >
+                  Send Payment Reminder
+                </button>
+                <button
+                  onClick={() => handleAdditionalActionsWrapper('payment_received')}
+                  className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                >
+                  Confirm Payment Received
+                </button>
+                <button
+                  onClick={() => handleAdditionalActionsWrapper('verification_needed')}
+                  className="w-full px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600"
+                >
+                  Request Verification
+                </button>
+                <button
+                  onClick={() => handleAdditionalActionsWrapper('delivery_scheduled')}
+                  className="w-full px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600"
+                >
+                  Send Delivery Details
+                </button>
+              </div>
+              <button
+                onClick={() => setShowAdditionalActionsModal(false)} // Close modal
+                className="w-full px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
 export default ClaimDetailsModal;
-

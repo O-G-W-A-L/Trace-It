@@ -42,6 +42,16 @@ const AddItemModal = ({ isOpen, onClose, onAddItem, currentUser }) => {
         imageUrl = await getDownloadURL(uploadResult.ref);
       }
 
+      // Ensure currentUser exists and has the necessary properties
+      if (!currentUser || !currentUser.uid) {
+        throw new Error('User not authenticated');
+      }
+
+      // Determine if the currentUser is an admin
+      const addedBy = currentUser && currentUser.role === 'admin' 
+        ? { id: currentUser.uid, name: currentUser.displayName || 'Admin User' }
+        : { id: currentUser.uid, name: currentUser.displayName || 'Unknown User' };
+
       // Add item to Firestore
       const itemData = {
         ...newItem,
@@ -49,7 +59,7 @@ const AddItemModal = ({ isOpen, onClose, onAddItem, currentUser }) => {
         status: 'unclaimed',
         createdAt: serverTimestamp(),
         claims: [],
-        addedBy: currentUser ? { id: currentUser.uid, name: currentUser.displayName || 'Unknown User' } : null,
+        addedBy, // Updated to reflect the role of the user
       };
 
       delete itemData.image; // Remove the file object before storing

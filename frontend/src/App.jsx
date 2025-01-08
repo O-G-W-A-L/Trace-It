@@ -10,6 +10,7 @@ import UserDashboard from './components/user/UserDashboard';
 import AdminDashboard from './components/admin/AdminDashboard';
 import ItemDetail from './components/user/ItemDetail';
 import UserProfile from './components/user/UserProfile';
+import AdminProfile from './components/admin/AdminProfile';
 import './index.css';
 
 const App = () => {
@@ -69,6 +70,8 @@ const App = () => {
             element={
               user && userRole === 'user' ? (
                 <UserDashboard user={user} onLogout={handleLogout} />
+              ) : user && userRole === 'admin' ? (
+                <Navigate to="/admin" />
               ) : (
                 <Navigate to="/login" />
               )
@@ -83,6 +86,16 @@ const App = () => {
             element={
               user && userRole === 'admin' ? (
                 <AdminDashboard onLogout={handleLogout} />
+              ) : (
+                <Navigate to="/login" />
+              )
+            }
+          />
+          <Route
+            path="/admin-profile"
+            element={
+              user && userRole === 'admin' ? (
+                <AdminProfile user={user} />
               ) : (
                 <Navigate to="/login" />
               )

@@ -6,7 +6,9 @@ import ItemManagement from './ItemManagement';
 import UserManagement from './UserManagement';
 import MessageManagement from './MessageManagement';
 import AddItemModal from './AddItemModal';
-import { LogOut, MapPin, Menu, X } from 'lucide-react';
+import { LogOut, MapPin, Menu, X, User } from 'lucide-react'; // Import User icon for the profile button
+import { useNavigate } from 'react-router-dom'; // Import useNavigate for routing
+import { getAuth } from 'firebase/auth';  // Import Firebase Auth to get currentUser
 
 const AdminDashboard = ({ onLogout }) => {
   const [activeTab, setActiveTab] = useState('items');
@@ -14,9 +16,18 @@ const AdminDashboard = ({ onLogout }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
   const [toast, setToast] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null); // Add currentUser state
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  const navigate = useNavigate(); // Initialize the navigate hook
+
   useEffect(() => {
+    // Get the current user on component mount
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (user) {
+      setCurrentUser(user);  // Set the currentUser state
+    }
     fetchData();
   }, []);
 
@@ -31,14 +42,16 @@ const AdminDashboard = ({ onLogout }) => {
       const queries = [
         query(collection(db, 'items'), orderBy('dateFound', 'desc')),
         query(collection(db, 'users')),
-        query(collection(db, 'messages'), orderBy('timestamp', 'desc'))
+        query(collection(db, 'messages'), orderBy('timestamp', 'desc')),
       ];
-      const [itemsSnapshot, usersSnapshot, messagesSnapshot] = await Promise.all(queries.map(q => getDocs(q)));
-      
+      const [itemsSnapshot, usersSnapshot, messagesSnapshot] = await Promise.all(
+        queries.map((q) => getDocs(q))
+      );
+
       setData({
-        items: itemsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
-        users: usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
-        messages: messagesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        items: itemsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
+        users: usersSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
+        messages: messagesSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
       });
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -54,16 +67,44 @@ const AdminDashboard = ({ onLogout }) => {
   };
 
   const contentComponents = {
-    items: <ItemManagement items={data.items} onAddItem={() => setIsAddItemModalOpen(true)} onRefresh={fetchData} />,
-    users: <UserManagement users={data.users} fetchData={fetchData} showToast={showToast} />,
-    messages: <MessageManagement messages={data.messages} users={data.users} fetchData={fetchData} showToast={showToast} />
+    items: (
+      <ItemManagement
+        items={data.items}
+        onAddItem={() => setIsAddItemModalOpen(true)}
+        onRefresh={fetchData}
+      />
+    ),
+    users: (
+      <UserManagement
+        users={data.users}
+        fetchData={fetchData}
+        showToast={showToast}
+      />
+    ),
+    messages: (
+      <MessageManagement
+        messages={data.messages}
+        users={data.users}
+        fetchData={fetchData}
+        showToast={showToast}
+      />
+    ),
   };
 
   return (
     <div className="flex h-screen bg-gray-100">
-      <div className={`fixed inset-0 bg-gray-600 bg-opacity-75 z-20 transition-opacity duration-300 lg:hidden ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={() => setIsMobileMenuOpen(false)} />
-      
-      <div className={`fixed inset-y-0 left-0 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out z-30 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} lg:relative lg:translate-x-0`}>
+      <div
+        className={`fixed inset-0 bg-gray-600 bg-opacity-75 z-20 transition-opacity duration-300 lg:hidden ${
+          isMobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={() => setIsMobileMenuOpen(false)}
+      />
+
+      <div
+        className={`fixed inset-y-0 left-0 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out z-30 ${
+          isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+        } lg:relative lg:translate-x-0`}
+      >
         <Sidebar activeTab={activeTab} setActiveTab={handleTabChange} />
       </div>
 
@@ -81,11 +122,22 @@ const AdminDashboard = ({ onLogout }) => {
                 </button>
                 <div className="flex-shrink-0 flex items-center ml-4 lg:ml-0">
                   <MapPin className="h-8 w-8 text-indigo-600" />
-                  <span className="ml-2 text-2xl font-bold text-gray-800">Trace-It Admin</span>
+                  <span className="ml-2 text-2xl font-bold text-gray-800">
+                    Trace-It Admin
+                  </span>
                 </div>
               </div>
               <div className="flex items-center">
-                <button 
+                {/* Profile Button */}
+                <button
+                  onClick={() => navigate('/admin-profile')}
+                  className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition flex items-center text-sm mr-4"
+                >
+                  <User className="h-5 w-5 mr-2" />
+                  <span className="hidden sm:inline">Profile</span>
+                </button>
+                {/* Logout Button */}
+                <button
                   onClick={onLogout}
                   className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition flex items-center text-sm"
                 >
@@ -114,20 +166,23 @@ const AdminDashboard = ({ onLogout }) => {
           </div>
         </main>
       </div>
-      
-      {isAddItemModalOpen && (
-        <AddItemModal 
-          isOpen={isAddItemModalOpen} 
-          onClose={() => setIsAddItemModalOpen(false)} 
+
+      {isAddItemModalOpen && currentUser && (
+        <AddItemModal
+          isOpen={isAddItemModalOpen}
+          onClose={() => setIsAddItemModalOpen(false)}
           onAddItem={fetchData}
           showToast={showToast}
+          currentUser={currentUser}  // Pass currentUser to AddItemModal
         />
       )}
-      
+
       {toast && (
-        <div className={`fixed bottom-4 right-4 px-4 py-2 rounded-md text-white shadow-lg transition-opacity duration-300 ${
-          toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'
-        }`}>
+        <div
+          className={`fixed bottom-4 right-4 px-4 py-2 rounded-md text-white shadow-lg transition-opacity duration-300 ${
+            toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+          }`}
+        >
           {toast.message}
         </div>
       )}

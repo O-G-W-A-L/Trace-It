@@ -13,12 +13,14 @@ import {
 } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import ClaimDetailsModal from './ClaimDetailsModal';
+import EditItemModal from './EditItemModal';
 
-const ItemManagement = ({ onAddItem, onEditItem, currentUser }) => {
+const ItemManagement = ({ onAddItem, currentUser }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
   const [activeTab, setActiveTab] = useState('available');
   const [claimDetailsModal, setClaimDetailsModal] = useState(null);
+  const [editItemModal, setEditItemModal] = useState(null);
   const [toast, setToast] = useState(null);
   const [items, setItems] = useState([]);
 
@@ -149,6 +151,25 @@ const ItemManagement = ({ onAddItem, onEditItem, currentUser }) => {
     } catch (error) {
       console.error('Error fetching claim details:', error);
       showToast('Error fetching claim details', 'error');
+    }
+  };
+
+  const handleEditItem = (item) => {
+    setEditItemModal(item);
+  };
+
+  const handleSaveEdit = async (updatedItem) => {
+    try {
+      const itemRef = doc(db, 'items', updatedItem.id);
+      await updateDoc(itemRef, {
+        ...updatedItem,
+        lastUpdated: serverTimestamp()
+      });
+      showToast('Item updated successfully', 'success');
+      setEditItemModal(null);
+    } catch (error) {
+      console.error('Error updating item:', error);
+      showToast('Error updating item', 'error');
     }
   };
 
@@ -285,7 +306,7 @@ const ItemManagement = ({ onAddItem, onEditItem, currentUser }) => {
                         </button>
                       )}
                       <button
-                        onClick={() => onEditItem(item)}
+                        onClick={() => handleEditItem(item)} // Use local function here
                         className="text-yellow-600 hover:text-yellow-800"
                       >
                         <Edit className="h-5 w-5" />
@@ -311,6 +332,14 @@ const ItemManagement = ({ onAddItem, onEditItem, currentUser }) => {
           item={claimDetailsModal.item}
           onClose={() => setClaimDetailsModal(null)}
           onClaimAction={handleClaimAction}
+        />
+      )}
+      {/* Edit Item Modal */}
+      {editItemModal && (
+        <EditItemModal
+          item={editItemModal}
+          onSave={handleSaveEdit}
+          onClose={() => setEditItemModal(null)}
         />
       )}
     </div>

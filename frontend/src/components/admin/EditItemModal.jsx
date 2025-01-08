@@ -10,10 +10,11 @@ const EditItemModal = ({ item, onSave, onClose }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setUpdatedItem(item);
-    if (item.addedBy) {
-      console.log('Fetching user details for:', item.addedBy.id); // Log the userId being passed
-      fetchUserDetails(item.addedBy.id); // Fetch user details
+    setUpdatedItem(item); // Reset updatedItem whenever the item prop changes
+    if (item?.addedBy?.id) {
+      fetchUserDetails(item.addedBy.id); // Fetch user details if available
+    } else {
+      setLoading(false); // Set loading to false if no user is linked
     }
   }, [item]);
 
@@ -22,11 +23,10 @@ const EditItemModal = ({ item, onSave, onClose }) => {
       const userSnap = await getDoc(doc(db, 'users', userId));
       if (userSnap.exists()) {
         const userData = userSnap.data();
-        console.log('User Data:', userData); // Log the user data to console
-        setUser(userData.fullName); // Set the fullName of the user
-        setRole(userData.role); // Set the role of the user
+        setUser(userData.fullName);
+        setRole(userData.role);
       } else {
-        console.log('No user found with ID:', userId); // Log if no user is found
+        console.log('No user found with ID:', userId);
       }
     } catch (error) {
       console.error('Error fetching user details:', error);
@@ -41,18 +41,18 @@ const EditItemModal = ({ item, onSave, onClose }) => {
   };
 
   const handleSave = () => {
-    onSave(updatedItem);
-    setIsEditing(false);
+    onSave(updatedItem); // Save updated item data
+    setIsEditing(false); // Switch out of editing mode
   };
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-75 z-50">
       <div className="bg-white p-6 rounded-lg shadow-lg w-96 max-h-[80vh] overflow-hidden">
         <h3 className="text-xl font-semibold mb-4">Edit Item</h3>
-        {!loading && user && role && (
+        {!loading && (
           <p className="mb-4 text-sm text-gray-700">
             Added by: <span className="font-semibold">
-              {role === 'admin' ? 'Admin' : 'User'} - {user || 'No name available'}
+              {role ? (role === 'admin' ? 'Admin' : 'User') : 'Unknown Role'} - {user || 'No name available'}
             </span>
           </p>
         )}
