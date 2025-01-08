@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { MapPin, MessageCircle, Truck } from 'lucide-react';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../../firebase/config';
-import { handleClaimAction, handleAdditionalActions } from './PaymentActions'; // Ensure this is imported
+import { handleClaimAction, handleAdditionalActions } from './PaymentActions';
 
 const ClaimDetailsModal = ({ claim, item, onClose, onClaimAction }) => {
   const [allClaims, setAllClaims] = useState([]);
@@ -159,7 +159,7 @@ const ClaimDetailsModal = ({ claim, item, onClose, onClaimAction }) => {
             <div className="bg-gray-50 p-4 rounded-lg">
               <h3 className="font-semibold text-lg mb-3">Additional Actions</h3>
               <button
-                onClick={() => setShowAdditionalActionsModal(true)} // Show the modal when clicked
+                onClick={() => setShowAdditionalActionsModal(true)} 
                 className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
               >
                 Open Additional Actions
@@ -182,6 +182,10 @@ const ClaimDetailsModal = ({ claim, item, onClose, onClaimAction }) => {
                 {showClaimantDetails && (
                   <div className="space-y-2 mt-3">
                     <p><span className="font-medium">Phone:</span> {currentClaim.phone}</p>
+                    <p><span className="font-medium">Claim Type:</span> {currentClaim.type}</p>
+                    <p><span className="font-medium">Date Lost:</span> {currentClaim.dateLost}</p>
+                    <p><span className="font-medium">Location Lost:</span> {currentClaim.locationLost}</p>
+                    <p><span className="font-medium">Unique Identifiers:</span> {currentClaim.uniqueIdentifiers}</p>
                   </div>
                 )}
               </div>
@@ -219,36 +223,24 @@ const ClaimDetailsModal = ({ claim, item, onClose, onClaimAction }) => {
               <h3 className="text-xl font-bold">Choose an Action</h3>
               <div className="space-y-2">
                 <button
-                  onClick={() => handleAdditionalActionsWrapper('payment_reminder')}
-                  className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                >
-                  Send Payment Reminder
-                </button>
-                <button
-                  onClick={() => handleAdditionalActionsWrapper('payment_received')}
-                  className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
-                >
-                  Confirm Payment Received
-                </button>
-                <button
-                  onClick={() => handleAdditionalActionsWrapper('verification_needed')}
+                  onClick={() => handleAdditionalActionsWrapper('markForInvestigation')}
                   className="w-full px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600"
                 >
-                  Request Verification
+                  Mark for Investigation
                 </button>
                 <button
-                  onClick={() => handleAdditionalActionsWrapper('delivery_scheduled')}
-                  className="w-full px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600"
+                  onClick={() => handleAdditionalActionsWrapper('resolve')}
+                  className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
                 >
-                  Send Delivery Details
+                  Mark as Resolved
+                </button>
+                <button
+                  onClick={() => setShowAdditionalActionsModal(false)}
+                  className="w-full px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+                >
+                  Cancel
                 </button>
               </div>
-              <button
-                onClick={() => setShowAdditionalActionsModal(false)} // Close modal
-                className="w-full px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
-              >
-                Close
-              </button>
             </div>
           </div>
         )}
