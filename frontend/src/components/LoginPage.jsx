@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { MapPin, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { auth } from '../firebase/config';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import GoogleSignInButton from './GoogleSignInButton';
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -13,7 +14,13 @@ const LoginPage = () => {
   const navigate = useNavigate();
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.id]: e.target.value });
-  const handleLogoClick = () => setLogoClicks(prev => (prev === 4 ? (setIsAdminLogin(true), 0) : prev + 1));
+  const handleLogoClick = () => setLogoClicks((prev) => {
+    const newClicks = prev + 1;
+    if (newClicks === 5) {
+      setIsAdminLogin(true);  // After 5 clicks, switch to admin login mode
+    }
+    return newClicks;
+  });
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
 
   // Determine the fetch URL based on the environment (local vs deployed)
@@ -88,11 +95,18 @@ const LoginPage = () => {
             {isAdminLogin ? 'Sign in as Admin' : 'Sign in'}
           </button>
         </form>
-        <div className="text-center">
-          <Link to="/register" className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors duration-200">
-            Don't have an account? Sign up
-          </Link>
+        <div className="relative text-sm text-gray-500 my-4">
+          <span className="absolute inset-x-0 top-1/2 transform -translate-y-1/2 bg-white px-4">Or continue with</span>
+          <div className="border-t border-gray-300" />
         </div>
+        {/* Conditionally render GoogleSignInButton when NOT in Admin login mode */}
+        {!isAdminLogin && <GoogleSignInButton />}
+        <p className="text-center text-sm text-gray-600">
+          Don't have an account?{' '}
+          <Link to="/register" className="font-medium text-indigo-600 hover:text-indigo-500">
+            Sign up
+          </Link>
+        </p>
       </div>
     </div>
   );

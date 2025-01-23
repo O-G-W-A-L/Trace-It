@@ -4,6 +4,7 @@ import { MapPin, Mail, Lock, User, Phone, Eye, EyeOff } from 'lucide-react';
 import { auth } from '../firebase/config';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
+import GoogleSignInButton from './GoogleSignInButton'; // Import the reusable component
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
@@ -121,6 +122,9 @@ const RegisterPage = () => {
           </button>
         </form>
 
+        {/* Conditionally render GoogleSignInButton when NOT in Admin registration mode */}
+        {!isAdminRegister && <GoogleSignInButton />}
+        
         <div className="text-center">
           <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
             Already have an account? Sign in
@@ -132,4 +136,3 @@ const RegisterPage = () => {
 };
 
 export default RegisterPage;
-

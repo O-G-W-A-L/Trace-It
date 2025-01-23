@@ -11,6 +11,7 @@ import AdminDashboard from './components/admin/AdminDashboard';
 import ItemDetail from './components/user/ItemDetail';
 import UserProfile from './components/user/UserProfile';
 import AdminProfile from './components/admin/AdminProfile';
+//import { AuthProvider } from "./contexts/authContext";  // Import AuthProvider
 import './index.css';
 
 const App = () => {
@@ -59,56 +60,56 @@ const App = () => {
   }
 
   return (
-    <Router basename="/">
-      <div className="min-h-screen bg-gray-100">
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route
-            path="/dashboard"
-            element={
-              user && userRole === 'user' ? (
-                <UserDashboard user={user} onLogout={handleLogout} />
-              ) : user && userRole === 'admin' ? (
-                <Navigate to="/admin" />
-              ) : (
-                <Navigate to="/login" />
-              )
-            }
-          />
-          <Route
-            path="/profile"
-            element={user ? <UserProfile user={user} /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/admin"
-            element={
-              user && userRole === 'admin' ? (
-                <AdminDashboard onLogout={handleLogout} />
-              ) : (
-                <Navigate to="/login" />
-              )
-            }
-          />
-          <Route
-            path="/admin-profile"
-            element={
-              user && userRole === 'admin' ? (
-                <AdminProfile user={user} />
-              ) : (
-                <Navigate to="/login" />
-              )
-            }
-          />
-          <Route
-            path="/item/:id"
-            element={user ? <ItemDetail currentUser={user} /> : <Navigate to="/login" />}
-          />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </div>
-    </Router>
+      <Router basename="/">
+        <div className="min-h-screen bg-gray-100">
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route
+              path="/dashboard"
+              element={
+                user && userRole === 'user' ? (
+                  <UserDashboard user={user} onLogout={handleLogout} />
+                ) : user && userRole === 'admin' ? (
+                  <Navigate to="/admin" />
+                ) : (
+                  <Navigate to="/login" />
+                )
+              }
+            />
+            <Route
+              path="/profile"
+              element={user ? <UserProfile user={user} /> : <Navigate to="/login" />}
+            />
+            <Route
+              path="/admin"
+              element={
+                user && userRole === 'admin' ? (
+                  <AdminDashboard onLogout={handleLogout} />
+                ) : (
+                  <Navigate to="/login" />
+                )
+              }
+            />
+            <Route
+              path="/admin-profile"
+              element={
+                user && userRole === 'admin' ? (
+                  <AdminProfile user={user} />
+                ) : (
+                  <Navigate to="/login" />
+                )
+              }
+            />
+            <Route
+              path="/item/:id"
+              element={user ? <ItemDetail currentUser={user} /> : <Navigate to="/login" />}
+            />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
+      </Router>
   );
 };
 
