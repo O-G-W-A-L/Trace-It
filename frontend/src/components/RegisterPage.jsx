@@ -2,13 +2,18 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { MapPin, Mail, Lock, User, Phone, Eye, EyeOff } from 'lucide-react';
 import { auth } from '../firebase/config';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification } from 'firebase/auth';
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
-import GoogleSignInButton from './GoogleSignInButton'; // Import the reusable component
+import GoogleSignInButton from './GoogleSignInButton';
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
-    firstName: '', lastName: '', email: '', password: '', confirmPassword: '', phoneNumber: ''
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    phoneNumber: '',
   });
   const [error, setError] = useState('');
   const [isAdminRegister, setIsAdminRegister] = useState(false);
@@ -17,11 +22,12 @@ const RegisterPage = () => {
   const navigate = useNavigate();
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.id]: e.target.value });
-  const handleLogoClick = () => setLogoClicks(prev => prev === 4 ? (setIsAdminRegister(true), 0) : prev + 1);
-  const togglePasswordVisibility = (field) => setShowPasswords(prev => ({ ...prev, [field]: !prev[field] }));
+  const handleLogoClick = () => setLogoClicks((prev) => (prev === 4 ? (setIsAdminRegister(true), 0) : prev + 1));
+  const togglePasswordVisibility = (field) => setShowPasswords((prev) => ({ ...prev, [field]: !prev[field] }));
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    setError('');
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -31,18 +37,34 @@ const RegisterPage = () => {
       return;
     }
     try {
+      // Attempt to create a new user
       const { user } = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+
+      // Update the user's display name and send an email verification
       await updateProfile(user, { displayName: `${formData.firstName} ${formData.lastName}` });
+      await sendEmailVerification(user);
+
+      // Save user data to Firestore
       await saveUserData(user.uid, {
         ...formData,
         role: isAdminRegister ? 'admin' : 'user',
         fullName: `${formData.firstName} ${formData.lastName}`,
         phone: formData.phoneNumber,
-        createdAt: new Date()
+        emailVerified: false,
+        createdAt: new Date(),
       });
+
+      alert('Registration successful! Please verify your email before logging in.');
       navigate('/login');
     } catch (error) {
-      setError(error.message);
+      // Handle specific Firebase errors for better feedback
+      if (error.code === 'auth/invalid-email') {
+        setError('The email address is invalid. Please provide a valid email.');
+      } else if (error.code === 'auth/email-already-in-use') {
+        setError('This email is already registered. Please use a different email.');
+      } else {
+        setError(error.message || 'An error occurred during registration.');
+      }
     }
   };
 
@@ -53,7 +75,9 @@ const RegisterPage = () => {
 
   const renderInput = (id, type, placeholder, icon) => (
     <div>
-      <label htmlFor={id} className="block text-sm font-medium text-gray-700 capitalize">{id.replace(/([A-Z])/g, ' $1').trim()}</label>
+      <label htmlFor={id} className="block text-sm font-medium text-gray-700 capitalize">
+        {id.replace(/([A-Z])/g, ' $1').trim()}
+      </label>
       <div className="mt-1 relative">
         <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           {icon}
@@ -107,7 +131,11 @@ const RegisterPage = () => {
             <div className="rounded-md bg-red-50 p-4">
               <div className="flex">
                 <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 <h3 className="ml-3 text-sm font-medium text-red-800">{error}</h3>
               </div>
@@ -122,9 +150,8 @@ const RegisterPage = () => {
           </button>
         </form>
 
-        {/* Conditionally render GoogleSignInButton when NOT in Admin registration mode */}
         {!isAdminRegister && <GoogleSignInButton />}
-        
+
         <div className="text-center">
           <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
             Already have an account? Sign in

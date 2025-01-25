@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { auth, db } from '../firebase/config'; // Ensure Firestore is initialized in your firebase config
 import { useNavigate } from 'react-router-dom';
-import { setDoc, doc } from 'firebase/firestore';
+import { setDoc, doc, getDoc } from 'firebase/firestore';
 
 const GoogleSignInButton = () => {
   const [error, setError] = useState('');
@@ -18,21 +18,30 @@ const GoogleSignInButton = () => {
       console.log('Google sign-in successful:', result);
       const user = result.user;
 
-      // Save user info in Firestore with default fields
+      // Reference to the Firestore document
       const userDocRef = doc(db, 'users', user.uid);
-      await setDoc(userDocRef, {
-        fullName: user.displayName || '', // Defaults to the Google display name if available
-        email: user.email || '',
-        phone: user.phoneNumber || '', // Defaults to empty if unavailable
-        address: '', // Placeholder; update as needed
-        gender: '', // Placeholder; update as needed
-        profileImageUrl: user.photoURL || '', // Defaults to the Google profile image URL
-        bio: '', // Placeholder; update as needed
-        occupation: '', // Placeholder; update as needed
-        birthdate: '', // Placeholder; update as needed
-        website: '', // Placeholder; update as needed
-        role: 'user', // Default role for Google login
-      });
+
+      // Check if user document already exists
+      const userDocSnap = await getDoc(userDocRef);
+
+      if (!userDocSnap.exists()) {
+        // Save user info in Firestore with default fields if it's the first login
+        await setDoc(userDocRef, {
+          fullName: user.displayName || '', // Defaults to the Google display name if available
+          email: user.email || '',
+          phone: user.phoneNumber || '', // Defaults to empty if unavailable
+          address: '', // Placeholder; update as needed
+          gender: '', // Placeholder; update as needed
+          profileImageUrl: user.photoURL || '', // Defaults to the Google profile image URL
+          bio: '', // Placeholder; update as needed
+          occupation: '', // Placeholder; update as needed
+          birthdate: '', // Placeholder; update as needed
+          website: '', // Placeholder; update as needed
+          role: 'user', // Default role for Google login
+        });
+      } else {
+        console.log('User already exists. Skipping profile update.');
+      }
 
       // Directly navigate to the dashboard
       navigate('/dashboard');

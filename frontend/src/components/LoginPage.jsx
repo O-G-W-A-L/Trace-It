@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { MapPin, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { auth } from '../firebase/config';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import GoogleSignInButton from './GoogleSignInButton';
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
   const [isAdminLogin, setIsAdminLogin] = useState(false);
   const [logoClicks, setLogoClicks] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
@@ -17,32 +18,58 @@ const LoginPage = () => {
   const handleLogoClick = () => setLogoClicks((prev) => {
     const newClicks = prev + 1;
     if (newClicks === 5) {
-      setIsAdminLogin(true);  // After 5 clicks, switch to admin login mode
+      setIsAdminLogin(true); // After 5 clicks, switch to admin login mode
     }
     return newClicks;
   });
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
 
-  // Determine the fetch URL based on the environment (local vs deployed)
   const backendUrl = process.env.NODE_ENV === 'development'
-    ? 'http://localhost:5000/api/login'  // For local testing
-    : 'https://backend-cyan-six-87.vercel.app/api/login';  // For production
+    ? 'http://localhost:5000/api/login' // For local testing
+    : 'https://backend-cyan-six-87.vercel.app/api/login'; // For production
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
+    setMessage('');
     try {
+      // Authenticate user with Firebase
       const { user } = await signInWithEmailAndPassword(auth, formData.email, formData.password);
+
+      // Check if the user's email is verified
+      if (!user.emailVerified) {
+        setError('Email is not verified. Please check your inbox and verify your email.');
+        return;
+      }
+
+      // Get the ID token and send it to the backend
       const idToken = await user.getIdToken();
       const response = await fetch(backendUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
       });
       if (!response.ok) throw new Error((await response.json()).error || 'Login failed');
+
+      // Navigate based on the role returned by the backend
       const { role } = await response.json();
       navigate(role === 'admin' ? '/admin' : '/dashboard');
     } catch (error) {
-      setError('Invalid email or password');
+      setError(error.message || 'Invalid email or password');
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    if (!formData.email) {
+      setError('Please enter your email address to reset the password.');
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, formData.email);
+      setMessage('Password reset email sent! Check your inbox.');
+      setError('');
+    } catch (error) {
+      setError(error.message || 'Failed to send password reset email.');
+      setMessage('');
     }
   };
 
@@ -91,15 +118,26 @@ const LoginPage = () => {
               </div>
             </div>
           )}
+          {message && (
+            <div className="rounded-md bg-green-50 p-4">
+              <div className="flex">
+                <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 001.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                <h3 className="ml-3 text-sm font-medium text-green-800">{message}</h3>
+              </div>
+            </div>
+          )}
           <button type="submit" className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
             {isAdminLogin ? 'Sign in as Admin' : 'Sign in'}
           </button>
         </form>
-        <div className="relative text-sm text-gray-500 my-4">
-          <span className="absolute inset-x-0 top-1/2 transform -translate-y-1/2 bg-white px-4">Or continue with</span>
-          <div className="border-t border-gray-300" />
-        </div>
-        {/* Conditionally render GoogleSignInButton when NOT in Admin login mode */}
+        <button
+          onClick={handlePasswordReset}
+          className="w-full text-sm text-indigo-600 hover:text-indigo-500 mt-2 focus:outline-none"
+        >
+          Forgot your password?
+        </button>
         {!isAdminLogin && <GoogleSignInButton />}
         <p className="text-center text-sm text-gray-600">
           Don't have an account?{' '}
