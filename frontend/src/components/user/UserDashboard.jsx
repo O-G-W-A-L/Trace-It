@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, User, MapPin, LogOut, MessageCircle, X, Bell, Settings, ChevronDown, ChevronUp } from 'lucide-react';
+import { 
+  Search, User, MapPin, LogOut, MessageCircle, X, Bell, Settings, ChevronDown, ChevronUp 
+} from 'lucide-react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import MessagePanel from './MessagesPanel';
@@ -16,10 +18,18 @@ const UserDashboard = ({ user, onLogout }) => {
   const [isStatsVisible, setIsStatsVisible] = useState(false);
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
 
-  const categories = ['All', 'National IDs', 'Number Plates', 'Driving Permits', 'Academic Documents', 'Other Items'];
+  const categories = [
+    'All',
+    'National IDs',
+    'Number Plates',
+    'Driving Permits',
+    'Academic Documents',
+    'Other Items'
+  ];
 
   useEffect(() => {
     fetchItems();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeCategory]);
 
   const fetchItems = async () => {
@@ -74,38 +84,40 @@ const UserDashboard = ({ user, onLogout }) => {
     });
   };
 
-  const filteredItems = useMemo(
-    () =>
-      items.filter((item) =>
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.details?.toLowerCase().includes(searchQuery.toLowerCase())
-      ),
-    [items, searchQuery]
-  );
+  const filteredItems = useMemo(() => {
+    return items.filter((item) =>
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.details?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [items, searchQuery]);
 
-  const stats = useMemo(
-    () => ({
-      total: items.length,
-      unclaimed: items.filter((item) => item.status === 'unclaimed').length,
-      claimed: items.filter((item) => item.status === 'claimed').length,
-    }),
-    [items]
-  );
+  const stats = useMemo(() => ({
+    total: items.length,
+    unclaimed: items.filter((item) => item.status === 'unclaimed').length,
+    claimed: items.filter((item) => item.status === 'claimed').length,
+  }), [items]);
 
   return (
     <div className="bg-gray-100">
       <nav className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             <div className="flex items-center">
               <MapPin className="h-8 w-8 text-blue-600" />
               <span className="ml-2 text-2xl font-bold text-gray-900">TraceIt</span>
             </div>
             <div className="flex items-center space-x-4">
-              <button className="text-gray-600 hover:text-blue-600 transition" aria-label="Notifications">
+              <button 
+                className="text-gray-600 hover:text-blue-600 transition" 
+                aria-label="Notifications"
+              >
                 <Bell className="h-6 w-6" />
               </button>
-              <Link to="/profile" className="text-gray-600 hover:text-blue-600 transition" aria-label="Profile">
+              <Link 
+                to="/profile" 
+                className="text-gray-600 hover:text-blue-600 transition" 
+                aria-label="Profile"
+              >
                 <User className="h-6 w-6" />
               </Link>
               <button 
@@ -115,7 +127,11 @@ const UserDashboard = ({ user, onLogout }) => {
               >
                 <MessageCircle className="h-6 w-6" />
               </button>
-              <Link to="/settings" className="text-gray-600 hover:text-blue-600 transition" aria-label="Settings">
+              <Link 
+                to="/settings" 
+                className="text-gray-600 hover:text-blue-600 transition" 
+                aria-label="Settings"
+              >
                 <Settings className="h-6 w-6" />
               </Link>
               <button 
@@ -130,7 +146,7 @@ const UserDashboard = ({ user, onLogout }) => {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      <main className="w-full py-6 sm:px-6 lg:px-8">
         <div className="flex justify-end mb-4">
           <button
             onClick={handleAddItem}
@@ -152,7 +168,10 @@ const UserDashboard = ({ user, onLogout }) => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
-                <Search className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" aria-hidden="true" />
+                <Search 
+                  className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" 
+                  aria-hidden="true" 
+                />
               </div>
             </div>
 
@@ -164,7 +183,10 @@ const UserDashboard = ({ user, onLogout }) => {
                   className="text-blue-600 hover:text-blue-800 transition-colors duration-300 flex items-center"
                 >
                   {isStatsVisible ? 'Hide Stats' : 'Show Stats'}
-                  {isStatsVisible ? <ChevronUp className="ml-1 h-4 w-4" /> : <ChevronDown className="ml-1 h-4 w-4" />}
+                  {isStatsVisible ? 
+                    <ChevronUp className="ml-1 h-4 w-4" /> : 
+                    <ChevronDown className="ml-1 h-4 w-4" />
+                  }
                 </button>
               </div>
               <div className={`grid grid-cols-3 gap-4 mb-4 transition-all duration-300 ease-in-out ${isStatsVisible ? 'opacity-100 max-h-40' : 'opacity-0 max-h-0 overflow-hidden'}`}>
@@ -205,10 +227,18 @@ const UserDashboard = ({ user, onLogout }) => {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-4">
                 {filteredItems.map((item) => (
-                  <Link to={`/item/${item.id}`} key={item.id} className="bg-white rounded-lg shadow-sm hover:shadow-md transition duration-300 ease-in-out transform hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <Link 
+                    to={`/item/${item.id}`} 
+                    key={item.id} 
+                    className="bg-white rounded-lg shadow-sm hover:shadow-md transition duration-300 ease-in-out transform hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
                     <div className="p-4">
                       {item.imageUrl && (
-                        <img src={item.imageUrl} alt={item.name} className="w-full h-48 object-cover rounded-lg mb-4" />
+                        <img 
+                          src={item.imageUrl} 
+                          alt={item.name} 
+                          className="w-full h-48 object-cover rounded-lg mb-4" 
+                        />
                       )}
                       <h3 className="text-lg font-semibold text-gray-900">{item.name}</h3>
                       <p className="text-sm text-gray-600 mt-1">{item.type}</p>
@@ -221,7 +251,9 @@ const UserDashboard = ({ user, onLogout }) => {
                         }`}>
                           {item.status}
                         </span>
-                        <span className="text-sm text-gray-500">Added: {formatDate(item.dateAdded)}</span>
+                        <span className="text-sm text-gray-500">
+                          Added: {formatDate(item.dateAdded)}
+                        </span>
                       </div>
                     </div>
                   </Link>
@@ -235,12 +267,20 @@ const UserDashboard = ({ user, onLogout }) => {
               <div className="bg-white h-full shadow-lg border-l overflow-hidden flex flex-col">
                 <div className="p-4 border-b flex justify-between items-center bg-blue-50">
                   <h2 className="text-lg font-semibold text-gray-900">Messages</h2>
-                  <button onClick={() => setIsMessagePanelOpen(false)} className="text-gray-500 hover:text-gray-700 transition-colors duration-300" aria-label="Close messages panel">
+                  <button 
+                    onClick={() => setIsMessagePanelOpen(false)} 
+                    className="text-gray-500 hover:text-gray-700 transition-colors duration-300" 
+                    aria-label="Close messages panel"
+                  >
                     <X className="h-6 w-6" />
                   </button>
                 </div>
                 <div className="flex-1 overflow-y-auto">
-                  <MessagePanel currentUser={user} isOpen={isMessagePanelOpen} onClose={() => setIsMessagePanelOpen(false)} />
+                  <MessagePanel 
+                    currentUser={user} 
+                    isOpen={isMessagePanelOpen} 
+                    onClose={() => setIsMessagePanelOpen(false)} 
+                  />
                 </div>
               </div>
             </div>

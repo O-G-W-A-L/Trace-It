@@ -1,5 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Phone, MapPin, Camera, ArrowLeft, Edit2, Save, Calendar, Briefcase, Globe } from 'lucide-react';
+import {
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Camera,
+  ArrowLeft,
+  Edit2,
+  Save,
+  Calendar,
+  Briefcase,
+  Globe
+} from 'lucide-react';
 import { getAuth } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -32,9 +44,23 @@ const UserProfile = () => {
     const loadProfile = async () => {
       try {
         if (!currentUser) throw new Error('No user logged in');
-        const userData = (await getDoc(doc(db, 'users', currentUser.uid))).data() || {};
-        setProfile({ ...userData, email: currentUser.email });
+        const docRef = doc(db, 'users', currentUser.uid);
+        const docSnap = await getDoc(docRef);
+        const userData = docSnap.data() || {};
+        setProfile({
+          fullName: userData.fullName || '',
+          email: currentUser.email,
+          phone: userData.phone || '',
+          address: userData.address || '',
+          gender: userData.gender || '',
+          profileImageUrl: userData.profileImageUrl || '',
+          bio: userData.bio || '',
+          occupation: userData.occupation || '',
+          birthdate: userData.birthdate || '',
+          website: userData.website || ''
+        });
       } catch (error) {
+        console.error('Error loading profile:', error);
         setStatus(prev => ({ ...prev, error: 'Failed to load profile' }));
       } finally {
         setStatus(prev => ({ ...prev, loading: false }));
@@ -46,13 +72,55 @@ const UserProfile = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setNewImage(file);
+      // Compress and resize the image
+      const compressedImage = compressImage(file);
+      compressedImage.then((img) => {
+        setNewImage(img);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setImagePreview(reader.result);
+        };
+        reader.readAsDataURL(img);
+      });
+    }
+  };
+
+  const compressImage = (file) => {
+    return new Promise((resolve) => {
+      const img = new Image();
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
+      reader.onload = (e) => {
+        img.onload = async () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          const maxWidth = 1920; // Maximum width
+          const maxHeight = 1080; // Maximum height
+          let width = img.width;
+          let height = img.height;
+
+          // Calculate new dimensions while maintaining aspect ratio
+          if (width > maxWidth) {
+            height = Math.floor((maxHeight / maxWidth) * height);
+            width = maxWidth;
+          }
+          if (height > maxHeight) {
+            width = Math.floor((maxWidth / maxHeight) * width);
+            height = maxHeight;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Convert to WebP format for better compression
+          canvas.toBlob((blob) => {
+            resolve(new File([blob], file.name, { type: 'image/webp' }));
+          }, 'image/webp', 0.8); // 80% quality
+        };
+        img.src = e.target.result;
       };
       reader.readAsDataURL(file);
-    }
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -63,8 +131,25 @@ const UserProfile = () => {
       let imageUrl = profile.profileImageUrl;
       if (newImage) {
         const imageRef = ref(storage, `profile-images/${currentUser.uid}`);
-        await uploadBytes(imageRef, newImage);
-        imageUrl = await getDownloadURL(imageRef);
+
+        // Implement retry logic
+        const maxRetries = 3;
+        let retries = 0;
+        let uploadSuccessful = false;
+
+        while (retries < maxRetries && !uploadSuccessful) {
+          try {
+            await uploadBytes(imageRef, newImage);
+            imageUrl = await getDownloadURL(imageRef);
+            uploadSuccessful = true;
+          } catch (error) {
+            retries++;
+            if (retries >= maxRetries) {
+              throw new Error('Upload failed after multiple attempts');
+            }
+            await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds before retrying
+          }
+        }
       }
 
       await updateDoc(doc(db, 'users', currentUser.uid), {
@@ -78,6 +163,7 @@ const UserProfile = () => {
       setIsEditing(false);
       setTimeout(() => setStatus(prev => ({ ...prev, success: '' })), 3000);
     } catch (error) {
+      console.error('Error updating profile:', error);
       setStatus(prev => ({ ...prev, error: 'Update failed' }));
     } finally {
       setStatus(prev => ({ ...prev, loading: false }));
@@ -122,7 +208,7 @@ const UserProfile = () => {
                 <div className="relative group">
                   <div className="relative w-40 h-40 rounded-full overflow-hidden border-4 border-white shadow-2xl transition-transform duration-300 transform hover:scale-105">
                     <img
-                      src={imagePreview || profile.profileImageUrl || 'https://via.placeholder.com/150'}
+                      src={imagePreview || profile.profileImageUrl || 'https://placehold.co/150'}
                       alt="Profile"
                       className="w-full h-full object-cover"
                     />
@@ -186,7 +272,7 @@ const UserProfile = () => {
                         {type === 'select' ? (
                           <select
                             name={name}
-                            value={profile[name]}
+                            value={profile[name] || ''}
                             onChange={(e) => setProfile(prev => ({ ...prev, [name]: e.target.value }))}
                             disabled={!isEditing}
                             className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
@@ -201,7 +287,7 @@ const UserProfile = () => {
                         ) : type === 'textarea' ? (
                           <textarea
                             name={name}
-                            value={profile[name]}
+                            value={profile[name] || ''}
                             onChange={(e) => setProfile(prev => ({ ...prev, [name]: e.target.value }))}
                             disabled={!isEditing}
                             placeholder={placeholder}
@@ -212,7 +298,7 @@ const UserProfile = () => {
                           <input
                             type={type}
                             name={name}
-                            value={profile[name]}
+                            value={profile[name] || ''}
                             onChange={(e) => setProfile(prev => ({ ...prev, [name]: e.target.value }))}
                             disabled={!isEditing}
                             placeholder={placeholder}

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc } from 'firebase/firestore';
 import { db, storage } from '../../firebase/config';
 
 const AddItemModal = ({ isOpen, onClose, onAddItem, currentUser }) => {
@@ -52,12 +52,15 @@ const AddItemModal = ({ isOpen, onClose, onAddItem, currentUser }) => {
         ? { id: currentUser.uid, name: currentUser.displayName || 'Admin User' }
         : { id: currentUser.uid, name: currentUser.displayName || 'Unknown User' };
 
+      // Capture the exact date and time the item was added
+      const addedAt = new Date();
+
       // Add item to Firestore
       const itemData = {
         ...newItem,
         imageUrl,
         status: 'unclaimed',
-        createdAt: serverTimestamp(),
+        addedAt, // Store the exact date and time
         claims: [],
         addedBy, // Updated to reflect the role of the user
       };
