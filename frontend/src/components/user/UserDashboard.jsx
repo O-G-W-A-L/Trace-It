@@ -8,7 +8,7 @@ import { db } from '../../firebase/config';
 import MessagePanel from './MessagesPanel';
 import AddItemModal from '../admin/AddItemModal';
 import Footer from './Footer';
-import Notification from './Notification'; // Import the Notification component
+import Notification from './Notification';
 
 const UserDashboard = ({ user, onLogout }) => {
   const [items, setItems] = useState([]);
@@ -18,7 +18,7 @@ const UserDashboard = ({ user, onLogout }) => {
   const [isMessagePanelOpen, setIsMessagePanelOpen] = useState(false);
   const [isStatsVisible, setIsStatsVisible] = useState(false);
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
-  const [notifications, setNotifications] = useState([]); // State for notifications
+  const [notifications, setNotifications] = useState([]);
 
   const categories = [
     'All',
@@ -31,8 +31,7 @@ const UserDashboard = ({ user, onLogout }) => {
 
   useEffect(() => {
     fetchItems();
-    fetchNotifications(); // Fetch notifications
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    fetchNotifications();
   }, [activeCategory]);
 
   const fetchItems = async () => {
@@ -42,13 +41,13 @@ const UserDashboard = ({ user, onLogout }) => {
       if (activeCategory === 'All') {
         itemsQuery = query(
           collection(db, 'items'),
-          where('status', '!=', 'claimed') // Exclude claimed items
+          where('status', '!=', 'claimed')
         );
       } else {
         itemsQuery = query(
           collection(db, 'items'),
           where('category', '==', activeCategory),
-          where('status', '!=', 'claimed') // Exclude claimed items for the active category
+          where('status', '!=', 'claimed')
         );
       }
 

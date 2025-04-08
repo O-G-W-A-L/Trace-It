@@ -93,8 +93,8 @@ const UserProfile = () => {
         img.onload = async () => {
           const canvas = document.createElement('canvas');
           const ctx = canvas.getContext('2d');
-          const maxWidth = 1920; // Maximum width
-          const maxHeight = 1080; // Maximum height
+          const maxWidth = 1920;
+          const maxHeight = 1080;
           let width = img.width;
           let height = img.height;
 
@@ -115,7 +115,7 @@ const UserProfile = () => {
           // Convert to WebP format for better compression
           canvas.toBlob((blob) => {
             resolve(new File([blob], file.name, { type: 'image/webp' }));
-          }, 'image/webp', 0.8); // 80% quality
+          }, 'image/webp', 0.8);
         };
         img.src = e.target.result;
       };
@@ -147,7 +147,7 @@ const UserProfile = () => {
             if (retries >= maxRetries) {
               throw new Error('Upload failed after multiple attempts');
             }
-            await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds before retrying
+            await new Promise(resolve => setTimeout(resolve, 2000));
           }
         }
       }
