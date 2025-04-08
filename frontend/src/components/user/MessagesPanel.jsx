@@ -18,7 +18,7 @@ const MessagePanel = ({ currentUser, isOpen, onClose }) => {
     if (isOpen && currentUser?.email) {
       const messagesQuery = query(
         collection(db, 'messages'),
-        orderBy('timestamp', 'desc') // Changed to 'desc' for latest first
+        orderBy('timestamp', 'desc')
       );
       
       setLoading(true);
@@ -80,11 +80,6 @@ const MessagePanel = ({ currentUser, isOpen, onClose }) => {
 
   return (
     <div className="bg-white h-full flex flex-col">
-      <div className="p-4 border-b flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Messages with Admin</h2>
-        <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-2xl">×</button>
-      </div>
-      
       {error && <div className="bg-red-100 text-red-700 p-3 m-4 rounded-md">{error}</div>}
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4 flex flex-col-reverse">

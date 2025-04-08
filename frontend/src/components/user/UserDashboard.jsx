@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  Search, User, MapPin, LogOut, MessageCircle, X, Bell, Settings, ChevronDown, ChevronUp 
+  Search, User, MapPin, LogOut, MessageCircle, X, Bell, ChevronDown, ChevronUp 
 } from 'lucide-react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import MessagePanel from './MessagesPanel';
 import AddItemModal from '../admin/AddItemModal';
 import Footer from './Footer';
+import Notification from './Notification'; // Import the Notification component
 
 const UserDashboard = ({ user, onLogout }) => {
   const [items, setItems] = useState([]);
@@ -17,6 +18,7 @@ const UserDashboard = ({ user, onLogout }) => {
   const [isMessagePanelOpen, setIsMessagePanelOpen] = useState(false);
   const [isStatsVisible, setIsStatsVisible] = useState(false);
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]); // State for notifications
 
   const categories = [
     'All',
@@ -29,6 +31,7 @@ const UserDashboard = ({ user, onLogout }) => {
 
   useEffect(() => {
     fetchItems();
+    fetchNotifications(); // Fetch notifications
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeCategory]);
 
@@ -66,6 +69,26 @@ const UserDashboard = ({ user, onLogout }) => {
     }
   };
 
+  // Fetch notifications from Firebase or another source
+  const fetchNotifications = async () => {
+    try {
+      // Replace with your actual notifications query
+      const notificationsQuery = query(
+        collection(db, 'notifications'),
+        where('userId', '==', user.id)
+      );
+
+      const querySnapshot = await getDocs(notificationsQuery);
+      const fetchedNotifications = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setNotifications(fetchedNotifications);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
   const handleAddItem = () => {
     setIsAddItemModalOpen(true);
   };
@@ -97,8 +120,19 @@ const UserDashboard = ({ user, onLogout }) => {
     claimed: items.filter((item) => item.status === 'claimed').length,
   }), [items]);
 
+  // Function to mark a notification as read
+  const markAsRead = (notificationId) => {
+    setNotifications(
+      notifications.map(notification =>
+        notification.id === notificationId
+          ? { ...notification, isRead: true }
+          : notification
+      )
+    );
+  };
+
   return (
-    <div className="bg-gray-100">
+    <div className="bg-gray-100 min-h-screen">
       <nav className="bg-white shadow-sm sticky top-0 z-10">
         <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
@@ -106,37 +140,32 @@ const UserDashboard = ({ user, onLogout }) => {
               <MapPin className="h-8 w-8 text-blue-600" />
               <span className="ml-2 text-2xl font-bold text-gray-900">TraceIt</span>
             </div>
-            <div className="flex items-center space-x-4">
-              <button 
-                className="text-gray-600 hover:text-blue-600 transition" 
-                aria-label="Notifications"
-              >
-                <Bell className="h-6 w-6" />
-              </button>
+            <div className="flex items-center space-x-6">
+              <Notification
+                notifications={notifications}
+                markAsRead={markAsRead}
+                onNotificationClick={(notification) => {
+                  // Handle notification click (e.g., navigation)
+                  console.log('Notification clicked:', notification);
+                }}
+              />
               <Link 
                 to="/profile" 
-                className="text-gray-600 hover:text-blue-600 transition" 
+                className="text-gray-600 hover:text-blue-600 transition-colors duration-300"
                 aria-label="Profile"
               >
                 <User className="h-6 w-6" />
               </Link>
               <button 
                 onClick={() => setIsMessagePanelOpen(!isMessagePanelOpen)} 
-                className="text-gray-600 hover:text-blue-600 transition"
+                className="text-gray-600 hover:text-blue-600 transition-colors duration-300"
                 aria-label={isMessagePanelOpen ? "Close messages" : "Open messages"}
               >
                 <MessageCircle className="h-6 w-6" />
               </button>
-              <Link 
-                to="/settings" 
-                className="text-gray-600 hover:text-blue-600 transition" 
-                aria-label="Settings"
-              >
-                <Settings className="h-6 w-6" />
-              </Link>
               <button 
                 onClick={onLogout} 
-                className="text-gray-600 hover:text-blue-600 transition"
+                className="text-gray-600 hover:text-blue-600 transition-colors duration-300"
                 aria-label="Logout"
               >
                 <LogOut className="h-6 w-6" />
@@ -146,7 +175,7 @@ const UserDashboard = ({ user, onLogout }) => {
         </div>
       </nav>
 
-      <main className="w-full py-6 sm:px-6 lg:px-8">
+      <main className="w-full py-6 sm:px-6 lg:px-8 pb-20">
         <div className="flex justify-end mb-4">
           <button
             onClick={handleAddItem}
