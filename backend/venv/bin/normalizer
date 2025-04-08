@@ -1,4 +1,4 @@
-#!/home/ogwal/Hunters/Trace-It/backend/venv/bin/python3
+#!/home/hunter/Hunters/Trace-It/backend/venv/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys

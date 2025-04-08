@@ -10,7 +10,11 @@ def create_app():
     # Enable CORS for both localhost and Vercel frontend URLs
     CORS(app, resources={
         r"/*": {
-            "origins": ["http://localhost:5173", "https://trace-it-tau.vercel.app"],
+            "origins": [
+                "http://localhost:5173",  # Local React app
+                "https://trace-it-tau.vercel.app",  # Deployed React app
+                "https://www.googleapis.com"  # Firebase Auth's origin for Google sign-in
+                ],
             "supports_credentials": True
         }
     })
