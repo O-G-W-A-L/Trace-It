@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, MapPin, Shield, ArrowRight } from 'lucide-react';
+import { Search, MapPin, Shield, ArrowRight, Sparkles } from 'lucide-react';
 
 const LandingPage = () => {
   useEffect(() => {
@@ -10,7 +10,7 @@ const LandingPage = () => {
         const top = element.getBoundingClientRect().top;
         if (top < window.innerHeight - 100) {
           element.classList.add('opacity-100');
-          element.classList.add('translate-y-0');
+          element.classList.remove('translate-y-10');
         }
       });
     };
@@ -21,129 +21,195 @@ const LandingPage = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#E3F2FD] to-[#BBDEFB] relative overflow-hidden">
-      {/* Decorative background pattern */}
-      <div className="absolute inset-0 bg-[radial-gradient(#1E88E5_1px,transparent_1px)] [background-size:40px_40px] opacity-5"></div>
-      <div className="absolute inset-0 backdrop-blur-[100px]"></div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
+      {/* Optimized mobile background */}
+      <div className="absolute inset-0 opacity-20">
+        {[...Array(8)].map((_, i) => (
+          <div key={i} className="absolute w-32 h-32 md:w-48 md:h-48 bg-gradient-to-r from-blue-500/30 to-cyan-400/30 
+            rounded-full blur-lg md:blur-3xl animate-float" style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDelay: `${i * 2}s`
+            }} />
+        ))}
+      </div>
 
-      <div className="container mx-auto px-4 py-6 relative z-10">
-        {/* Logo */}
-        <div className="flex justify-between items-center">
+      <div className="container mx-auto px-4 py-4 md:py-8 relative z-10">
+        {/* Mobile-optimized navigation */}
+        <nav className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 
+          backdrop-blur-md bg-slate-900/50 rounded-2xl px-4 md:px-8 py-4 shadow-2xl">
+          
           <div className="flex items-center space-x-3 group">
-            <div className="relative">
-              <MapPin className="h-8 w-8 text-[#1E88E5] transform group-hover:rotate-12 transition-all duration-300" />
-              <div className="absolute -inset-1 bg-blue-500/20 rounded-full blur group-hover:bg-blue-500/30 transition-all duration-300"></div>
+            <div className="relative p-2 md:p-3 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-xl 
+              md:rounded-2xl transform group-hover:rotate-[25deg] transition-all duration-500">
+              <MapPin className="h-5 w-5 md:h-6 md:w-6 text-white" />
+              <Sparkles className="absolute -top-1 -right-1 md:-top-2 md:-right-2 h-3 w-3 md:h-4 md:w-4 text-yellow-400 animate-pulse" />
             </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-[#0D47A1] to-[#1976D2] bg-clip-text text-transparent">
+            <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-300 
+              bg-clip-text text-transparent tracking-tighter">
               TraceIt
             </span>
           </div>
           
-          {/* Login/Register buttons */}
-          <div className="space-x-6">
+          <div className="flex items-center space-x-4 md:space-x-6 w-full md:w-auto justify-between">
             <Link 
               to="/login" 
-              className="text-[#1565C0] hover:text-[#1E88E5] transition-all duration-300 relative inline-block
-                after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 
-                after:bg-[#1E88E5] hover:after:w-full after:transition-all"
+              className="text-sm md:text-base text-slate-300 hover:text-white transition-all duration-300 
+                hover:bg-slate-800/50 px-3 py-1.5 md:px-6 md:py-2 rounded-full border border-slate-700/50 
+                hover:border-cyan-400/30 relative group flex-1 md:flex-none text-center"
             >
-              Login
+              <span className="relative z-10">Login</span>
+              <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/20 to-blue-500/20 
+                opacity-0 group-hover:opacity-100 rounded-full transition-opacity duration-300" />
             </Link>
             <Link 
               to="/register" 
-              className="relative inline-flex items-center justify-center px-6 py-3 overflow-hidden 
-                font-medium text-[#1976D2] transition duration-300 ease-out border-2 border-[#1976D2] 
-                rounded-md shadow-md group hover:text-white"
+              className="text-sm md:text-base relative inline-flex items-center justify-center px-4 py-2 
+                md:px-8 md:py-3 overflow-hidden font-medium group bg-gradient-to-br from-blue-500 to-cyan-400 
+                rounded-full shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] flex-1 md:flex-none"
             >
-              <span className="absolute inset-0 flex items-center justify-center w-full h-full text-white 
-                duration-300 -translate-x-full bg-[#1976D2] group-hover:translate-x-0 ease">
-                <ArrowRight className="h-5 w-5" />
+              <span className="absolute right-0 w-6 h-6 md:w-8 md:h-8 -mt-8 md:-mt-12 transition-all duration-1000 
+                transform translate-x-8 md:translate-x-12 bg-white opacity-10 rotate-12 group-hover:-translate-x-96 ease" />
+              <span className="relative text-white flex items-center space-x-1.5 md:space-x-2">
+                <span>Get Started</span>
+                <ArrowRight className="h-3.5 w-3.5 md:h-4 md:w-4 transition-transform group-hover:translate-x-1" />
               </span>
-              <span className="absolute flex items-center justify-center w-full h-full transition-all 
-                duration-300 transform group-hover:translate-x-full ease">Register</span>
-              <span className="relative invisible">Register</span>
             </Link>
           </div>
-        </div>
+        </nav>
       </div>
 
-      <main className="container mx-auto px-4 py-16 relative z-10">
-        <div className="text-center mb-20 fade-in-section opacity-0 translate-y-5 transition-all duration-700">
-          <h1 className="text-5xl sm:text-6xl font-bold mb-6 bg-gradient-to-r from-[#0D47A1] to-[#1976D2] 
-            bg-clip-text text-transparent leading-tight">
-            Find What You've Lost
+      <main className="container mx-auto px-4 pt-16 md:pt-32 pb-16 md:pb-48 relative z-10">
+        <div className="text-center mb-12 md:mb-24 fade-in-section opacity-0 translate-y-10 transition-all duration-700">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 md:mb-8 bg-gradient-to-r from-blue-400 via-cyan-300 
+            to-blue-400 bg-clip-text text-transparent leading-tight animate-gradient-x">
+            Never Lose What<br className="hidden md:block"/> Matters Most
           </h1>
-          <p className="text-xl text-[#1565C0] max-w-2xl mx-auto leading-relaxed">
-            TraceIt helps you locate and recover your lost belongings quickly and efficiently. 
-            From IDs to personal items, we've got you covered.
+          <p className="text-base md:text-xl text-slate-300 max-w-xs md:max-w-2xl mx-auto leading-relaxed mb-6 md:mb-8">
+            AI-powered lost item recovery with blockchain security and real-time tracking
           </p>
+          <div className="inline-flex items-center space-x-3 bg-slate-800/50 backdrop-blur-md 
+            px-4 py-2 md:px-6 md:py-3 rounded-full border border-slate-700/50">
+            <div className="h-1.5 w-1.5 md:h-2 md:w-2 bg-cyan-400 rounded-full animate-pulse" />
+            <span className="text-xs md:text-base text-slate-300">Recovered items: 1,234,567+</span>
+          </div>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-20">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 mb-12 md:mb-24">
           {[
-            { icon: <Search />, title: "Easy Search", description: "Quickly search through our database of found items using keywords or categories." },
-            { icon: <MapPin />, title: "Nationwide Coverage", description: "We cover all regions of the country, ensuring a wide reach for your lost items." },
-            { icon: <Shield />, title: "Secure & Reliable", description: "Your information is kept confidential, and our process is designed to be secure and trustworthy." }
+            { 
+              icon: <Search className="h-6 w-6 md:h-8 md:w-8" />, 
+              title: "Smart Search", 
+              description: "AI-powered image recognition and natural language search",
+              color: "from-blue-500 to-cyan-400"
+            },
+            { 
+              icon: <MapPin className="h-6 w-6 md:h-8 md:w-8" />, 
+              title: "Live Tracking", 
+              description: "Real-time location tracking with community updates",
+              color: "from-purple-500 to-fuchsia-400"
+            },
+            { 
+              icon: <Shield className="h-6 w-6 md:h-8 md:w-8" />, 
+              title: "Secure Recovery", 
+              description: "Blockchain-verified transactions and encryption",
+              color: "from-green-500 to-emerald-400"
+            }
           ].map((feature, index) => (
             <div key={index} 
-              className="group fade-in-section opacity-0 translate-y-5 transition-all duration-700 
-                backdrop-blur-md bg-white/40 p-8 rounded-2xl shadow-lg hover:shadow-2xl 
-                hover:-translate-y-2"
+              className={`fade-in-section opacity-0 translate-y-10 transition-all duration-700 
+                backdrop-blur-md bg-slate-800/20 p-4 md:p-8 rounded-xl md:rounded-3xl border border-slate-700/30
+                hover:border-${feature.color.split(' ')[0]}/30 relative overflow-hidden
+                group hover:bg-slate-800/30 cursor-pointer`}
+              style={{ transitionDelay: `${index * 150}ms` }}
             >
-              <div className="flex justify-center mb-6">
-                <div className="relative p-4 bg-gradient-to-br from-[#1E88E5] to-[#1976D2] rounded-2xl 
-                  group-hover:scale-110 transition-transform duration-300">
-                  {React.cloneElement(feature.icon, { className: "h-12 w-12 text-white" })}
+              <div className="absolute inset-0 bg-gradient-to-br ${feature.color}/5 opacity-0 
+                group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="relative z-10">
+                <div className={`mb-4 md:mb-6 p-2 md:p-4 w-max bg-gradient-to-br ${feature.color} 
+                  rounded-lg md:rounded-2xl group-hover:scale-110 transition-transform duration-300`}>
+                  {feature.icon}
                 </div>
+                <h3 className="text-lg md:text-2xl font-semibold text-white mb-2 md:mb-4">{feature.title}</h3>
+                <p className="text-xs md:text-base text-slate-400 leading-relaxed">{feature.description}</p>
               </div>
-              <h3 className="text-2xl font-semibold text-[#1565C0] mb-4">{feature.title}</h3>
-              <p className="text-[#1976D2] leading-relaxed">{feature.description}</p>
             </div>
           ))}
         </div>
 
-        <div className="text-center fade-in-section opacity-0 translate-y-5 transition-all duration-700">
+        <div className="text-center fade-in-section opacity-0 translate-y-10 transition-all duration-700">
           <Link 
             to="/register" 
-            className="relative inline-flex items-center justify-center px-10 py-4 overflow-hidden 
-              font-bold text-white transition-all duration-300 ease-out bg-gradient-to-r 
-              from-[#1976D2] to-[#1E88E5] rounded-xl shadow-md hover:scale-105 
-              hover:shadow-xl group"
+            className="relative inline-flex items-center justify-center px-8 py-3 md:px-14 md:py-5 overflow-hidden 
+              font-medium text-white group bg-gradient-to-br from-blue-500 to-cyan-400 rounded-lg md:rounded-2xl 
+              shadow-xl md:shadow-2xl hover:shadow-2xl md:hover:shadow-3xl transition-all duration-300 hover:scale-[1.02]
+              hover:bg-gradient-to-bl text-sm md:text-base"
           >
-            <span className="absolute inset-0 flex items-center justify-center w-full h-full text-white 
-              duration-300 transform -translate-x-full bg-[#1565C0] group-hover:translate-x-0 ease">
-              Start Now <ArrowRight className="h-5 w-5 ml-2" />
+            <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 
+              transition-opacity duration-300" />
+            <span className="relative flex items-center space-x-2">
+              <span>Start Free Trial</span>
+              <ArrowRight className="h-4 w-4 md:h-5 md:w-5 transition-transform group-hover:translate-x-1" />
             </span>
-            <span className="absolute flex items-center justify-center w-full h-full text-white 
-              transition-all duration-300 transform group-hover:translate-x-full ease">
-              Start Finding Your Items
-            </span>
-            <span className="relative invisible">Start Finding Your Items</span>
           </Link>
         </div>
       </main>
 
-      <footer className="bg-gradient-to-r from-[#1976D2] to-[#1E88E5] text-white py-10 relative z-10">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col sm:flex-row justify-between items-center">
-            <div className="mb-4 sm:mb-0 font-medium">&copy; 2024 TraceIt. All rights reserved.</div>
-            <div className="space-x-8">
-              <Link 
-                to="/terms" 
-                className="hover:text-[#E3F2FD] transition-colors duration-300 relative
-                  after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 
-                  after:h-0.5 after:bg-[#E3F2FD] hover:after:w-full after:transition-all"
-              >
-                Terms of Service
-              </Link>
-              <Link 
-                to="/privacy" 
-                className="hover:text-[#E3F2FD] transition-colors duration-300 relative
-                  after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 
-                  after:h-0.5 after:bg-[#E3F2FD] hover:after:w-full after:transition-all"
-              >
-                Privacy Policy
-              </Link>
+      <footer className="border-t border-slate-700/50 relative z-10">
+        <div className="container mx-auto px-4 py-8 md:py-12">
+          <div className="flex flex-col space-y-8 md:space-y-0 md:flex-row justify-between items-start">
+            <div className="mb-4 md:mb-0">
+              <div className="flex items-center space-x-3">
+                <MapPin className="h-5 w-5 md:h-6 md:w-6 text-cyan-400" />
+                <span className="text-base md:text-lg font-medium text-slate-300">TraceIt</span>
+              </div>
+              <p className="mt-2 md:mt-4 text-xs md:text-sm text-slate-400 max-w-xs">
+                Secure, decentralized item recovery solutions
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-6 md:gap-16 w-full md:w-auto">
+              <div className="space-y-2 md:space-y-4">
+                <h4 className="text-sm md:text-base text-slate-300 font-medium">Solutions</h4>
+                <div className="space-y-1 md:space-y-2">
+                  <Link to="/features" className="block text-xs md:text-sm text-slate-400 hover:text-cyan-400">
+                    Features
+                  </Link>
+                  <Link to="/security" className="block text-xs md:text-sm text-slate-400 hover:text-cyan-400">
+                    Security
+                  </Link>
+                  <Link to="/enterprise" className="block text-xs md:text-sm text-slate-400 hover:text-cyan-400">
+                    Enterprise
+                  </Link>
+                </div>
+              </div>
+              <div className="space-y-2 md:space-y-4">
+                <h4 className="text-sm md:text-base text-slate-300 font-medium">Company</h4>
+                <div className="space-y-1 md:space-y-2">
+                  <Link to="/about" className="block text-xs md:text-sm text-slate-400 hover:text-cyan-400">
+                    About
+                  </Link>
+                  <Link to="/blog" className="block text-xs md:text-sm text-slate-400 hover:text-cyan-400">
+                    Blog
+                  </Link>
+                  <Link to="/careers" className="block text-xs md:text-sm text-slate-400 hover:text-cyan-400">
+                    Careers
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="border-t border-slate-700/50 mt-6 md:mt-12 pt-4 md:pt-8 text-center md:text-left">
+            <div className="text-xs md:text-sm text-slate-400">
+              &copy; 2024 TraceIt. All rights reserved.
+              <div className="mt-2 md:mt-0 md:inline-block md:ml-4">
+                <Link to="/terms" className="hover:text-cyan-400 transition-colors">
+                  Terms
+                </Link>
+                <span className="mx-2">•</span>
+                <Link to="/privacy" className="hover:text-cyan-400 transition-colors">
+                  Privacy
+                </Link>
+              </div>
             </div>
           </div>
         </div>
