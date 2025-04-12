@@ -106,7 +106,7 @@ const LandingPage = () => {
           </p>
         </div>
 
-        {/* Features (centered on small screens) */}
+        {/* Features (equal width cards on mobile) */}
         <div className="grid grid-cols-1 justify-items-center md:grid-cols-3 gap-4 md:gap-8 mb-12 md:mb-24">
           {[
             {
@@ -128,18 +128,27 @@ const LandingPage = () => {
               color: 'from-green-500 to-emerald-400',
             },
           ].map((f, i) => (
-            <div
-              key={i}
-              className={`fade-in-section opacity-0 translate-y-10 transition-all duration-700 backdrop-blur-md bg-slate-800/20 p-4 md:p-8 rounded-xl md:rounded-3xl border border-slate-700/30 hover:border-${f.color.split(' ')[0]}/30 relative overflow-hidden group hover:bg-slate-800/30 cursor-pointer`}
-              style={{ transitionDelay: `${i * 150}ms` }}
-            >
-              <div className={`absolute inset-0 bg-gradient-to-br ${f.color}/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
-              <div className="relative z-10 text-center">
-                <div className={`mb-4 md:mb-6 p-2 md:p-4 w-max bg-gradient-to-br ${f.color} rounded-lg md:rounded-2xl group-hover:scale-110 transition-transform duration-300 mx-auto`}>
-                  {f.icon}
+            <div key={i} className="w-full max-w-sm">
+              <div
+                className={`fade-in-section opacity-0 translate-y-10 transition-all duration-700 backdrop-blur-md bg-slate-800/20 p-4 md:p-8 rounded-xl md:rounded-3xl border border-slate-700/30 hover:border-${f.color.split(' ')[0]}/30 relative overflow-hidden group hover:bg-slate-800/30 cursor-pointer`}
+                style={{ transitionDelay: `${i * 150}ms` }}
+              >
+                <div
+                  className={`absolute inset-0 bg-gradient-to-br ${f.color}/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
+                />
+                <div className="relative z-10 text-center">
+                  <div
+                    className={`mb-4 md:mb-6 p-2 md:p-4 w-max bg-gradient-to-br ${f.color} rounded-lg md:rounded-2xl group-hover:scale-110 transition-transform duration-300 mx-auto`}
+                  >
+                    {f.icon}
+                  </div>
+                  <h3 className="text-lg md:text-2xl font-semibold text-white mb-2 md:mb-4">
+                    {f.title}
+                  </h3>
+                  <p className="text-xs md:text-base text-slate-400 leading-relaxed">
+                    {f.description}
+                  </p>
                 </div>
-                <h3 className="text-lg md:text-2xl font-semibold text-white mb-2 md:mb-4">{f.title}</h3>
-                <p className="text-xs md:text-base text-slate-400 leading-relaxed">{f.description}</p>
               </div>
             </div>
           ))}
@@ -170,7 +179,7 @@ const LandingPage = () => {
           </div>
         </div>
 
-        {/* How It Works (narrower cards, less scroll) */}
+        {/* How It Works */}
         <div className="mb-12 md:mb-24 fade-in-section opacity-0 translate-y-10 transition-all duration-700">
           <div className="text-center mb-8">
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">How It Works</h2>
@@ -187,7 +196,7 @@ const LandingPage = () => {
                   <p className="text-slate-300 text-sm text-center">{s.text}</p>
                 </div>
                 {i < steps.length - 1 && (
-                  <ArrowRight className="hidden md:block text-slate-500 w-6 h-6 mx-2" />
+                  <ArrowRight className="flex-shrink-0 text-slate-500 w-6 h-6 mx-2" />
                 )}
               </React.Fragment>
             ))}
