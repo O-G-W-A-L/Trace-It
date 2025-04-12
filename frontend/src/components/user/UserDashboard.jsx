@@ -57,7 +57,7 @@ const UserDashboard = ({ user, onLogout }) => {
         return {
           id: doc.id,
           ...data,
-          dateAdded: data.dateAdded?.toDate() || new Date(),
+          createdAt: data.createdAt?.toDate() || new Date(),
         };
       });
       setItems(fetchedItems);
@@ -71,7 +71,6 @@ const UserDashboard = ({ user, onLogout }) => {
   // Fetch notifications from Firebase or another source
   const fetchNotifications = async () => {
     try {
-      // Replace with your actual notifications query
       const notificationsQuery = query(
         collection(db, 'notifications'),
         where('userId', '==', user.id)
@@ -107,11 +106,13 @@ const UserDashboard = ({ user, onLogout }) => {
   };
 
   const filteredItems = useMemo(() => {
-    return items.filter((item) =>
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.details?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [items, searchQuery]);
+    return items.filter((item) => {
+      const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (item.details?.toLowerCase?.() || '').includes(searchQuery.toLowerCase());
+      const matchesCategory = activeCategory === 'All' || item.category === activeCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [items, searchQuery, activeCategory]);
 
   const stats = useMemo(() => ({
     total: items.length,
@@ -144,7 +145,6 @@ const UserDashboard = ({ user, onLogout }) => {
                 notifications={notifications}
                 markAsRead={markAsRead}
                 onNotificationClick={(notification) => {
-                  // Handle notification click (e.g., navigation)
                   console.log('Notification clicked:', notification);
                 }}
               />
@@ -271,6 +271,7 @@ const UserDashboard = ({ user, onLogout }) => {
                       <h3 className="text-lg font-semibold text-gray-900">{item.name}</h3>
                       <p className="text-sm text-gray-600 mt-1">{item.type}</p>
                       <p className="text-sm text-gray-500 mt-1">Location: {item.location}</p>
+                      <p className="text-sm text-gray-500 mt-1">Category: {item.category}</p>
                       <div className="mt-2 flex justify-between items-center">
                         <span className={`px-2 py-1 rounded-full text-xs ${
                           item.status === 'unclaimed'
@@ -280,7 +281,7 @@ const UserDashboard = ({ user, onLogout }) => {
                           {item.status}
                         </span>
                         <span className="text-sm text-gray-500">
-                          Added: {formatDate(item.dateAdded)}
+                          Added: {formatDate(item.createdAt)}
                         </span>
                       </div>
                     </div>

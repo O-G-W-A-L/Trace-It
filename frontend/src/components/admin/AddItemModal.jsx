@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc } from 'firebase/firestore';
 import { db, storage } from '../../firebase/config';
+import { serverTimestamp } from 'firebase/firestore';
 
 const AddItemModal = ({ isOpen, onClose, onAddItem, currentUser }) => {
   const initialState = {
@@ -60,9 +61,9 @@ const AddItemModal = ({ isOpen, onClose, onAddItem, currentUser }) => {
         ...newItem,
         imageUrl,
         status: 'unclaimed',
-        addedAt, // Store the exact date and time
+        createdAt: serverTimestamp(),
         claims: [],
-        addedBy, // Updated to reflect the role of the user
+        addedBy,
       };
 
       delete itemData.image; // Remove the file object before storing
