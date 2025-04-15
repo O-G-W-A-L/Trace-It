@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { Truck } from 'lucide-react';
+import React, { useState } from 'react';
 import { 
   collection, 
   addDoc, 
@@ -9,19 +8,9 @@ import {
   doc
 } from 'firebase/firestore';
 import { db } from '../../firebase/config';
-
-const REGIONS_AND_DISTRICTS = {
-  Northern: {districts: ['Gulu', 'Kitgum', 'Lira', 'Arua'], baseFee: 15000},
-  Eastern: {districts: ['Jinja', 'Mbale', 'Soroti', 'Tororo'], baseFee: 12000},
-  Southern: {districts: ['Masaka', 'Mbarara', 'Kabale', 'Rukungiri'], baseFee: 13000},
-  Western: {districts: ['Fort Portal', 'Kasese', 'Hoima', 'Masindi'], baseFee: 14000},
-  Central: {districts: ['Kampala', 'Wakiso', 'Mukono', 'Entebbe'], baseFee: 8000}
-};
+import { checkClaimEligibility } from '../admin/AutoClaimApproval';
 
 const ClaimForm = ({ item, currentUser, onClaimSubmit, onCancel, isLoading, totalClaims }) => {
-  const [selectedRegion, setSelectedRegion] = useState('');
-  const [selectedDistrict, setSelectedDistrict] = useState('');
-  const [deliveryFee, setDeliveryFee] = useState(0);
   const [claimDetails, setClaimDetails] = useState({
     identificationDetails: '',
     additionalNotes: '',
@@ -29,30 +18,7 @@ const ClaimForm = ({ item, currentUser, onClaimSubmit, onCancel, isLoading, tota
     type: '',
     uniqueIdentifiers: '',
     locationLost: '',
-    deliveryRegion: '',
-    deliveryDistrict: '',
-    deliveryFee: 0
   });
-
-  useEffect(() => {
-    if (selectedRegion && selectedDistrict) {
-      const baseFee = REGIONS_AND_DISTRICTS[selectedRegion].baseFee;
-      const calculatedFee = baseFee;
-      setDeliveryFee(calculatedFee);
-      setClaimDetails(prev => ({
-        ...prev,
-        deliveryRegion: selectedRegion,
-        deliveryDistrict: selectedDistrict,
-        deliveryFee: calculatedFee
-      }));
-    }
-  }, [selectedRegion, selectedDistrict]);
-
-  const handleRegionChange = (e) => {
-    const region = e.target.value;
-    setSelectedRegion(region);
-    setSelectedDistrict('');
-  };
 
   const handleClaimSubmit = async (e) => {
     e.preventDefault();
@@ -69,28 +35,30 @@ const ClaimForm = ({ item, currentUser, onClaimSubmit, onCancel, isLoading, tota
 
       const claimRef = await addDoc(collection(db, 'claims'), claim);
 
+      // Auto-approval check
+      const autoApprovalResult = await checkClaimEligibility(
+        claimRef.id,
+        { ...claim, userId: currentUser.uid }, // Ensure userId is passed
+        item
+      );
+
+      if (autoApprovalResult.success && autoApprovalResult.approved) {
+        onClaimSubmit();
+        return;
+      }
+
+      // If manual review is needed, update item status and notify
       const itemRef = doc(db, 'items', item.id);
       await updateDoc(itemRef, {
         status: 'pending_claim',
         claims: arrayUnion(claimRef.id),
-        claimCount: (totalClaims + 1),
+        claimCount: totalClaims + 1,
         lastUpdated: serverTimestamp()
-      });
-
-      await addDoc(collection(db, 'notifications'), {
-        type: 'new_claim',
-        itemId: item.id,
-        claimId: claimRef.id,
-        userId: currentUser.uid,
-        timestamp: serverTimestamp(),
-        read: false,
-        message: `New claim submitted for ${item.name}`,
-        userEmail: currentUser.email
       });
 
       onClaimSubmit();
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error submitting claim:', error);
       throw error;
     }
   };
@@ -184,44 +152,6 @@ const ClaimForm = ({ item, currentUser, onClaimSubmit, onCancel, isLoading, tota
             />
           </div>
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium">
-              Delivery Location
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <select
-                required
-                className="border rounded p-2"
-                value={selectedRegion}
-                onChange={handleRegionChange}
-              >
-                <option value="">Select Region</option>
-                {Object.keys(REGIONS_AND_DISTRICTS).map(region => (
-                  <option key={region} value={region}>{region}</option>
-                ))}
-              </select>
-
-              <select
-                required
-                className="border rounded p-2"
-                value={selectedDistrict}
-                onChange={(e) => setSelectedDistrict(e.target.value)}
-                disabled={!selectedRegion}
-              >
-                <option value="">Select District</option>
-                {selectedRegion && REGIONS_AND_DISTRICTS[selectedRegion].districts.map(district => (
-                  <option key={district} value={district}>{district}</option>
-                ))}
-              </select>
-            </div>
-            {deliveryFee > 0 && (
-              <div className="flex items-center text-sm text-gray-600">
-                <Truck className="w-4 h-4 mr-1" />
-                Delivery Fee: UGX {deliveryFee.toLocaleString()}
-              </div>
-            )}
-          </div>
-
           <div>
             <label className="block text-sm font-medium mb-1">
               Additional Notes
@@ -248,7 +178,7 @@ const ClaimForm = ({ item, currentUser, onClaimSubmit, onCancel, isLoading, tota
             </button>
             <button
               type="submit"
-              disabled={isLoading || !selectedRegion || !selectedDistrict}
+              disabled={isLoading}
               className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
             >
               {isLoading ? 'Submitting...' : 'Submit Claim'}

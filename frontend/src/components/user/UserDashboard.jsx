@@ -1,7 +1,8 @@
+// src/components/user/UserDashboard.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  Search, User, MapPin, LogOut, MessageCircle, X, Bell, ChevronDown, ChevronUp 
+  Search, User, MapPin, LogOut, MessageCircle, Bell, ChevronDown, ChevronUp 
 } from 'lucide-react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase/config';
@@ -73,13 +74,14 @@ const UserDashboard = ({ user, onLogout }) => {
     try {
       const notificationsQuery = query(
         collection(db, 'notifications'),
-        where('userId', '==', user.id)
+        where('userId', '==', user.uid)
       );
 
       const querySnapshot = await getDocs(notificationsQuery);
       const fetchedNotifications = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
+        isRead: doc.data().isRead || false // Add isRead property if not present
       }));
       setNotifications(fetchedNotifications);
     } catch (error) {
@@ -119,6 +121,12 @@ const UserDashboard = ({ user, onLogout }) => {
     unclaimed: items.filter((item) => item.status === 'unclaimed').length,
     claimed: items.filter((item) => item.status === 'claimed').length,
   }), [items]);
+  
+  // Memoize the first name to avoid unnecessary recalculations
+  const firstName = useMemo(() => {
+    const full = user.displayName || user.name || (user.email && user.email.split('@')[0]) || '';
+    return full.split(' ')[0];
+  }, [user]);
 
   // Function to mark a notification as read
   const markAsRead = (notificationId) => {
@@ -144,9 +152,7 @@ const UserDashboard = ({ user, onLogout }) => {
               <Notification
                 notifications={notifications}
                 markAsRead={markAsRead}
-                onNotificationClick={(notification) => {
-                  console.log('Notification clicked:', notification);
-                }}
+                onNotificationClick={fetchNotifications}
               />
               <Link 
                 to="/profile" 
@@ -187,7 +193,7 @@ const UserDashboard = ({ user, onLogout }) => {
         <div className="flex flex-col md:flex-row">
           <div className={`flex-1 transition-all ${isMessagePanelOpen ? 'md:mr-96' : ''}`}>
             <div className="px-4 mb-6">
-              <h1 className="text-3xl font-bold text-gray-900 mb-4">Welcome back, {user.name}</h1>
+              <h1 className="text-2xl font-semibold text-gray-900 mb-4">Welcome back{firstName ? `, ${firstName}` : ''}!</h1>
               <div className="relative">
                 <input
                   type="text"
@@ -301,7 +307,7 @@ const UserDashboard = ({ user, onLogout }) => {
                     className="text-gray-500 hover:text-gray-700 transition-colors duration-300" 
                     aria-label="Close messages panel"
                   >
-                    <X className="h-6 w-6" />
+                    <MessageCircle className="h-6 w-6" />
                   </button>
                 </div>
                 <div className="flex-1 overflow-y-auto">
