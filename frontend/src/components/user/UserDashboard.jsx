@@ -1,17 +1,20 @@
-// src/components/user/UserDashboard.jsx
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   Search, User, MapPin, LogOut, MessageCircle, Bell, ChevronDown, ChevronUp 
 } from 'lucide-react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../../firebase/config';
+import { signOut } from 'firebase/auth';
+import { auth, db } from '../../firebase/config';
+import { useAuth } from '../../contexts/AuthContext';
 import MessagePanel from './MessagesPanel';
 import AddItemModal from '../admin/AddItemModal';
 import Footer from './Footer';
 import Notification from './Notification';
 
-const UserDashboard = ({ user, onLogout }) => {
+const UserDashboard = () => {
+  const { user } = useAuth(); // Get user from AuthContext
+  const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [activeCategory, setActiveCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -20,6 +23,15 @@ const UserDashboard = ({ user, onLogout }) => {
   const [isStatsVisible, setIsStatsVisible] = useState(false);
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
+
+  // Add loading state for user data
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg">Loading user data...</div>
+      </div>
+    );
+  }
 
   const categories = [
     'All',
@@ -139,6 +151,15 @@ const UserDashboard = ({ user, onLogout }) => {
     );
   };
 
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate('/login', { replace: true });
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
   return (
     <div className="bg-gray-100 min-h-screen">
       <nav className="bg-white shadow-sm sticky top-0 z-10">
@@ -169,7 +190,7 @@ const UserDashboard = ({ user, onLogout }) => {
                 <MessageCircle className="h-6 w-6" />
               </button>
               <button 
-                onClick={onLogout} 
+                onClick={handleLogout} 
                 className="text-gray-600 hover:text-blue-600 transition-colors duration-300"
                 aria-label="Logout"
               >

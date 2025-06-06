@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '../../firebase/config';
+import { getAuth, signOut } from 'firebase/auth';
 import Sidebar from './Sidebar';
 import ItemManagement from './ItemManagement';
 import UserManagement from './UserManagement';
 import MessageManagement from './MessageManagement';
 import AddItemModal from './AddItemModal';
-import { LogOut, MapPin, Menu, X, User } from 'lucide-react'; // Import User icon for the profile button
-import { useNavigate } from 'react-router-dom'; // Import useNavigate for routing
-import { getAuth } from 'firebase/auth';  // Import Firebase Auth to get currentUser
+import { LogOut, MapPin, Menu, X, User } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const AdminDashboard = ({ onLogout }) => {
   const [activeTab, setActiveTab] = useState('items');
@@ -16,17 +16,16 @@ const AdminDashboard = ({ onLogout }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
   const [toast, setToast] = useState(null);
-  const [currentUser, setCurrentUser] = useState(null); // Add currentUser state
+  const [currentUser, setCurrentUser] = useState(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const navigate = useNavigate(); // Initialize the navigate hook
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // Get the current user on component mount
     const auth = getAuth();
     const user = auth.currentUser;
     if (user) {
-      setCurrentUser(user);  // Set the currentUser state
+      setCurrentUser(user);
     }
     fetchData();
   }, []);
@@ -64,6 +63,16 @@ const AdminDashboard = ({ onLogout }) => {
   const showToast = (message, type) => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleLogout = async () => {
+    try {
+      const auth = getAuth();
+      await signOut(auth);
+      navigate('/login', { replace: true });
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
 
   const contentComponents = {
@@ -138,7 +147,7 @@ const AdminDashboard = ({ onLogout }) => {
                 </button>
                 {/* Logout Button */}
                 <button
-                  onClick={onLogout}
+                  onClick={handleLogout}
                   className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition flex items-center text-sm"
                 >
                   <LogOut className="h-5 w-5 mr-2" />
@@ -173,7 +182,7 @@ const AdminDashboard = ({ onLogout }) => {
           onClose={() => setIsAddItemModalOpen(false)}
           onAddItem={fetchData}
           showToast={showToast}
-          currentUser={currentUser}  // Pass currentUser to AddItemModal
+          currentUser={currentUser}
         />
       )}
 
