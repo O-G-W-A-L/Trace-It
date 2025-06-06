@@ -9,9 +9,11 @@ import {
   MailOpen
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { deleteDoc, doc, writeBatch } from 'firebase/firestore';
+import { deleteDoc, doc, writeBatch, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { motion, AnimatePresence } from 'framer-motion';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { useAuth } from '../../contexts/AuthContext';
 
 const TABS = ['All', 'Unread', 'Read'];
 
@@ -36,27 +38,50 @@ function useLocalStorage(key, defaultValue) {
 }
 
 const Notification = ({
-  notifications = [],
-  markAsRead = () => {},
+  notifications: initialNotifications = [],
+  markAsRead: markAsReadProp = () => {},
   onNotificationClick = () => {}
 }) => {
-  // ← replace manual state with persisted map { [id]: true }
+  const { user } = useAuth();
+  const [notifications, setNotifications] = useState(initialNotifications);
   const [readStatus, setReadStatus] = useLocalStorage('readStatus', {});
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('All');
   const [deletingId, setDeletingId] = useState(null);
   const dropdownRef = useRef(null);
 
-  const handleOutside = useCallback((e) => {
-    if (isOpen && dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-      setIsOpen(false);
-    }
-  }, [isOpen]);
-
   useEffect(() => {
-    document.addEventListener('mousedown', handleOutside);
-    return () => document.removeEventListener('mousedown', handleOutside);
-  }, [handleOutside]);
+    if (!user?.uid) return;
+
+    const q = query(
+      collection(db, 'notifications'),
+      where('userId', '==', user.uid)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const notifs = snapshot.docs.map(doc => {
+        const data = doc.data();
+        let createdAt = data.createdAt;
+
+        // Attempt to convert timestamp to Date object
+        if (data.createdAt && typeof data.createdAt.toDate === 'function') {
+          createdAt = data.createdAt.toDate();
+        } else {
+          createdAt = new Date(); // Fallback to current date if conversion fails
+        }
+
+        return {
+          id: doc.id,
+          ...data,
+          timestamp: createdAt // Use the converted or fallback date
+        };
+      });
+      
+      setNotifications(notifs);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
 
   /** derive each notification’s read flag from persisted map */
   const isRead = (n) => readStatus[n.id] ?? n.isRead;
@@ -74,7 +99,7 @@ const Notification = ({
   const onClickNotif = async (n) => {
     if (!isRead(n)) {
       // 1) mark backend
-      await markAsRead(n.id);
+      await markAsReadProp(n.id);
       // 2) persist locally
       setReadStatus(prev => ({ ...prev, [n.id]: true }));
     }
@@ -111,6 +136,16 @@ const Notification = ({
       onNotificationClick();
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const markAsRead = async (notificationId) => {
+    try {
+      await updateDoc(doc(db, 'notifications', notificationId), {
+        read: true
+      });
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
     }
   };
 
@@ -246,8 +281,8 @@ const Notification = ({
                             </p>
                             <div className="mt-2 flex items-center text-xs text-gray-400 gap-2">
                               <Clock className="h-4 w-4"/>
-                              <time title={formatDistanceToNow(n.timestamp?.toDate(), { addSuffix: true })}>
-                                {formatDistanceToNow(n.timestamp?.toDate(), { addSuffix: true })}
+                              <time title={n.timestamp ? formatDistanceToNow(n.timestamp, { addSuffix: true }) : 'Recently'}>
+                                {n.timestamp ? formatDistanceToNow(n.timestamp, { addSuffix: true }) : 'Recently'}
                               </time>
                             </div>
                           </div>

@@ -1,99 +1,68 @@
-import { updateDoc, doc, addDoc, collection } from 'firebase/firestore';
-import { db } from '../../firebase/config';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 
-export const checkClaimEligibility = async (claimId, claimData, itemData) => {
-  try {
-    // Validate email format
-    const isEmailValid = validateEmail(claimData.userEmail);
-    
-    // Check if identifiers match (substring check for flexibility)
-    const doIdentifiersMatch = itemData.uniqueIdentifiers.toLowerCase().includes(
-      claimData.uniqueIdentifiers.toLowerCase()
-    );
-    
-    // Check if locations match (substring check for flexibility)
-    const doLocationsMatch = itemData.location.toLowerCase().includes(
-      claimData.locationLost.toLowerCase()
-    ) || claimData.locationLost.toLowerCase().includes(
-      itemData.location.toLowerCase()
-    );
-    
-    // Check if date is valid (claim date should not be later than item found date)
-    const isDateValid = checkDate(claimData.dateLost, itemData.dateFound);
+export default function AutoClaimApproval({ claimId, onAutoResult }) {
+  const [status, setStatus] = useState("Checking...");
+  const [autoApproved, setAutoApproved] = useState(null);
+  const [error, setError] = useState(null);
 
-    // Combine all conditions
-    if (isEmailValid && doIdentifiersMatch && doLocationsMatch && isDateValid) {
-      // Auto-approve the claim
-      await updateClaimStatus(claimId, 'approved');
-      
-      // Update item status to 'claimed'
-      await updateDoc(doc(db, 'items', itemData.id), { status: 'claimed' });
-      
-      // Add notification
-      await addNotification(
-        claimData.userId, // Use correct userId from Firebase Auth
-        'Your claim has been automatically approved.',
-        'Claim Approved',
-        'success'
-      );
-      
-      return {
-        success: true,
-        approved: true,
-        message: 'Claim automatically approved.',
-      };
-    } else {
-      // Manual review required
-      await updateClaimStatus(claimId, 'pending_review');
-      
-      // Add notification
-      await addNotification(
-        claimData.userId,
-        'Your claim is under review and will be processed within 24 hours.',
-        'Claim Under Review',
-        'info'
-      );
-      
-      return {
-        success: true,
-        approved: false,
-        message: 'Claim requires manual approval.',
-      };
+  useEffect(() => {
+    const checkAutoApproval = async () => {
+      try {
+        const response = await axios.post(
+          `/api/claims/auto-approve`,
+          { claimId },
+          { headers: { "Content-Type": "application/json" } }
+        );
+
+        const { autoApproved, similarityScore, message } = response.data;
+
+        setAutoApproved(autoApproved);
+        setStatus(autoApproved ? "Auto-approved ✅" : "Requires Manual Review ❗");
+        if (onAutoResult) {
+          onAutoResult({
+            autoApproved,
+            similarityScore,
+            message,
+          });
+        }
+      } catch (err) {
+        console.error("Error in auto-approval:", err);
+        setError("Auto-approval failed. Please try again.");
+        setStatus("Error occurred ❌");
+        if (onAutoResult) {
+          onAutoResult({
+            autoApproved: false,
+            similarityScore: null,
+            message: "Auto-approval system error. Claim sent for manual review.",
+          });
+        }
+      }
+    };
+
+    if (claimId) {
+      checkAutoApproval();
     }
-  } catch (error) {
-    console.error('Error during auto-approval check:', error);
-    return { success: false, error: error.message };
-  }
-};
+  }, [claimId, onAutoResult]);
 
-// Helper functions
-const validateEmail = (email) => {
-  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return regex.test(email);
-};
-
-const checkDate = (claimDate, itemDate) => {
-  const claimDateObj = new Date(claimDate);
-  const itemDateObj = new Date(itemDate);
-  return claimDateObj <= itemDateObj;
-};
-
-const updateClaimStatus = async (claimId, status) => {
-  const claimRef = doc(db, 'claims', claimId);
-  await updateDoc(claimRef, { status });
-};
-
-const addNotification = async (userId, message, title, type) => {
-  try {
-    await addDoc(collection(db, 'notifications'), {
-      userId: userId,
-      message: message,
-      title: title,
-      type: type,
-      isRead: false,
-      timestamp: new Date()
-    });
-  } catch (error) {
-    console.error('Error adding notification:', error);
-  }
-};
+  return (
+    <div className="bg-white rounded-xl shadow p-4 mt-4 border border-gray-200">
+      <h3 className="text-lg font-semibold text-gray-800">Auto Approval Status</h3>
+      <p className="text-sm text-gray-600 mt-2">
+        {status}
+        {error && <span className="text-red-500 ml-2">{error}</span>}
+      </p>
+      {autoApproved !== null && (
+        <p
+          className={`mt-3 text-sm font-medium ${
+            autoApproved ? "text-green-600" : "text-yellow-600"
+          }`}
+        >
+          {autoApproved
+            ? "✅ This claim was automatically approved based on the similarity score."
+            : "🔎 This claim has been routed to manual review for further analysis."}
+        </p>
+      )}
+    </div>
+  );
+}
