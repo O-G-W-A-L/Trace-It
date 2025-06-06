@@ -1,57 +1,50 @@
-import React, { useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import {
-  Search,
-  MapPin,
-  Shield,
-  ArrowRight,
-  Sparkles,
-  Users,
-  UserPlus,
-  Medal
-} from 'lucide-react';
+"use client"
+
+import React, { useEffect } from "react"
+import { Link } from "react-router-dom"
+import { Search, MapPin, Shield, ArrowRight, Sparkles, Users, UserPlus, Medal, Zap, Globe, Lock } from "lucide-react"
 
 const steps = [
   {
     icon: <Search className="w-6 h-6 text-white" />,
-    label: 'Search',
-    text: 'Upload a photo or describe your item',
+    label: "Search",
+    text: "Upload a photo or describe your item with AI-powered precision.",
   },
   {
     icon: <MapPin className="w-6 h-6 text-white" />,
-    label: 'Locate',
-    text: 'See real‑time matches on the map',
+    label: "Locate",
+    text: "Visualize real-time matches on an interactive, intuitive map.",
   },
   {
     icon: <Shield className="w-6 h-6 text-white" />,
-    label: 'Recover',
-    text: 'Securely claim your lost item',
+    label: "Recover",
+    text: "Securely claim your lost item with blockchain verification.",
   },
-];
+]
 
 const LandingPage = () => {
   useEffect(() => {
     const handleScroll = () => {
-      document.querySelectorAll('.fade-in-section').forEach(el => {
+      document.querySelectorAll(".fade-in-section").forEach((el) => {
         if (el.getBoundingClientRect().top < window.innerHeight - 100) {
-          el.classList.add('opacity-100');
-          el.classList.remove('translate-y-10');
+          el.classList.add("opacity-100", "translate-y-0")
+          el.classList.remove("opacity-0", "translate-y-10")
         }
-      });
-    };
-    window.addEventListener('scroll', handleScroll);
-    handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+      })
+    }
+    window.addEventListener("scroll", handleScroll)
+    handleScroll()
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
-      {/* Background Orbs */}
-      <div className="absolute inset-0 opacity-20">
-        {[...Array(8)].map((_, i) => (
+      {/* Enhanced Background Elements */}
+      <div className="absolute inset-0 opacity-20" aria-hidden="true">
+        {[...Array(6)].map((_, i) => (
           <div
             key={i}
-            className="absolute w-32 h-32 md:w-48 md:h-48 bg-gradient-to-r from-blue-500/30 to-cyan-400/30 rounded-full blur-lg md:blur-3xl animate-float"
+            className="absolute w-32 h-32 md:w-48 md:h-48 bg-gradient-to-r from-teal-500/30 to-cyan-400/30 rounded-full blur-3xl animate-float"
             style={{
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
@@ -61,197 +54,238 @@ const LandingPage = () => {
         ))}
       </div>
 
-      {/* NAV */}
-      <div className="container mx-auto px-4 py-4 md:py-8 relative z-10">
-        <nav className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 backdrop-blur-md bg-slate-900/50 rounded-2xl px-4 md:px-8 py-4 shadow-2xl">
+      {/* Navigation */}
+      <div className="container mx-auto px-4 py-4 md:py-6 relative z-10">
+        <nav className="flex justify-between items-center backdrop-blur-xl bg-slate-900/30 rounded-2xl px-4 md:px-6 py-4 shadow-2xl border border-white/10">
+          {/* Logo */}
           <div className="flex items-center space-x-3 group">
-            <div className="relative p-2 md:p-3 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-xl md:rounded-2xl transform group-hover:rotate-[25deg] transition-all duration-500">
-              <MapPin className="h-5 w-5 md:h-6 md:w-6 text-white" />
-              <Sparkles className="absolute -top-1 -right-1 md:-top-2 md:-right-2 h-3 w-3 md:h-4 md:w-4 text-yellow-400 animate-pulse" />
-            </div>
-            <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent tracking-tighter">
-              TraceIt
-            </span>
+            <Link to="/" className="flex items-center space-x-3">
+              <div className="relative p-2 md:p-3 bg-gradient-to-br from-teal-500 to-cyan-400 rounded-xl md:rounded-2xl transform group-hover:rotate-12 transition-all duration-500 shadow-lg">
+                <MapPin className="h-5 w-5 md:h-6 md:w-6 text-white" />
+                <Sparkles className="absolute -top-1 -right-1 md:-top-2 md:-right-2 h-3 w-3 md:h-4 md:w-4 text-yellow-400 animate-pulse" />
+              </div>
+              <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-teal-400 to-cyan-300 bg-clip-text text-transparent tracking-tight">
+                TraceIt
+              </span>
+            </Link>
           </div>
-          <div className="flex items-center space-x-4 md:space-x-6 w-full md:w-auto justify-between">
+
+          {/* Navigation Links */}
+          <div className="flex items-center">
             <Link
               to="/login"
-              className="text-sm md:text-base text-slate-300 hover:text-white transition-all duration-300 hover:bg-slate-800/50 px-3 py-1.5 md:px-6 md:py-2 rounded-full border border-slate-700/50 hover:border-cyan-400/30 relative group flex-1 md:flex-none text-center"
+              className="text-center text-sm md:text-base text-slate-300 hover:text-white transition-all duration-300 hover:bg-slate-800/50 px-4 md:px-6 py-2 rounded-full border border-slate-700/50 hover:border-teal-400/30 relative group"
             >
               <span className="relative z-10">Login</span>
-              <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/20 to-blue-500/20 opacity-0 group-hover:opacity-100 rounded-full transition-opacity duration-300" />
+              <div className="absolute inset-0 bg-gradient-to-r from-teal-400/20 to-cyan-500/20 opacity-0 group-hover:opacity-100 rounded-full transition-opacity duration-300" />
             </Link>
             <Link
               to="/register"
-              className="text-sm md:text-base relative inline-flex items-center justify-center px-4 py-2 md:px-8 md:py-3 overflow-hidden font-medium group bg-gradient-to-br from-blue-500 to-cyan-400 rounded-full shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] flex-1 md:flex-none"
+              className="hidden md:inline-flex ml-3 relative items-center justify-center px-4 md:px-8 py-2 md:py-3 overflow-hidden font-medium group bg-gradient-to-br from-teal-500 to-cyan-400 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
             >
               <span className="absolute right-0 w-6 h-6 md:w-8 md:h-8 -mt-8 md:-mt-12 transition-all duration-1000 transform translate-x-8 md:translate-x-12 bg-white opacity-10 rotate-12 group-hover:-translate-x-96 ease" />
-              <span className="relative text-white flex items-center space-x-1.5 md:space-x-2">
+              <span className="relative text-white flex items-center space-x-1 md:space-x-2 text-sm md:text-base">
                 <span>Get Started</span>
-                <ArrowRight className="h-3.5 w-3.5 md:h-4 md:w-4 transition-transform group-hover:translate-x-1" />
+                <ArrowRight className="h-3 w-3 md:h-4 md:w-4 transition-transform group-hover:translate-x-1" />
               </span>
             </Link>
           </div>
         </nav>
       </div>
 
-      <main className="container mx-auto px-4 pt-16 md:pt-32 pb-16 md:pb-48 relative z-10">
-        {/* Hero */}
-        <div className="text-center mb-12 md:mb-24 fade-in-section opacity-0 translate-y-10 transition-all duration-700">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 md:mb-8 bg-gradient-to-r from-blue-400 via-cyan-300 to-blue-400 bg-clip-text text-transparent leading-tight animate-gradient-x">
-            Never Lose What<br className="hidden md:block" /> Matters Most
+      {/* Hero Section */}
+      <main className="container mx-auto px-4 pt-12 md:pt-20 pb-20 md:pb-32 relative z-10">
+        <div className="text-center mb-16 md:mb-20 fade-in-section opacity-0 translate-y-10 transition-all duration-700">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold mb-6 md:mb-8 bg-gradient-to-r from-teal-400 via-cyan-300 to-teal-400 bg-clip-text text-transparent leading-tight px-4">
+            <span className="block">Reuniting You With</span>
+            <span className="relative inline-block mt-2">
+              <span className="relative z-10 text-white">What Matters Most</span>
+              <div className="absolute -bottom-1 md:-bottom-2 left-0 right-0 h-0.5 md:h-1 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-full z-0"></div>
+            </span>
           </h1>
-          <p className="text-base md:text-xl text-slate-300 max-w-xs md:max-w-2xl mx-auto leading-relaxed mb-6 md:mb-8">
-            AI-powered lost item recovery with blockchain security and real-time tracking
+          <p className="text-base md:text-xl text-slate-300 max-w-xs sm:max-w-2xl md:max-w-3xl mx-auto leading-relaxed mb-8 md:mb-10 px-4">
+            Empowering communities with AI-driven lost item recovery, secured by blockchain technology and updated in
+            real-time.
           </p>
+
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center px-4">
+            <Link
+              to="/register"
+              className="w-full sm:w-auto group relative inline-flex items-center justify-center px-6 md:px-8 py-3 md:py-4 text-base md:text-lg font-medium text-white bg-gradient-to-r from-teal-500 to-cyan-400 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
+            >
+              <Zap className="mr-2 h-4 w-4 md:h-5 md:w-5" />
+              Start Your Journey
+              <ArrowRight className="ml-2 h-4 w-4 md:h-5 md:w-5 transition-transform group-hover:translate-x-1" />
+            </Link>
+            <Link
+              to="/about"
+              className="w-full sm:w-auto group inline-flex items-center justify-center px-6 md:px-8 py-3 md:py-4 text-base md:text-lg font-medium text-slate-300 border border-slate-600 rounded-2xl hover:bg-slate-800/50 transition-all duration-300"
+            >
+              Learn More
+            </Link>
+          </div>
         </div>
 
-        {/* Features (equal width cards on mobile) */}
-        <div className="grid grid-cols-1 justify-items-center md:grid-cols-3 gap-4 md:gap-8 mb-12 md:mb-24">
+        {/* Enhanced Features Section */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
           {[
             {
-              icon: <Search className="h-6 w-6 md:h-8 md:w-8" />,
-              title: 'Smart Search',
-              description: 'AI-powered image recognition and natural language search',
-              color: 'from-blue-500 to-cyan-400',
+              icon: <Search className="h-8 w-8" />,
+              title: "AI-Powered Search",
+              description:
+                "Advanced image recognition and natural language processing to find your lost items instantly.",
+              color: "from-teal-500 to-cyan-400",
+              bgColor: "from-teal-500/10 to-cyan-400/10",
             },
             {
-              icon: <MapPin className="h-6 w-6 md:h-8 md:w-8" />,
-              title: 'Live Tracking',
-              description: 'Real-time location tracking with community updates',
-              color: 'from-purple-500 to-fuchsia-400',
+              icon: <Globe className="h-8 w-8" />,
+              title: "Real-Time Tracking",
+              description:
+                "Live location updates with community-powered notifications ensuring you never miss a match.",
+              color: "from-emerald-500 to-teal-400",
+              bgColor: "from-emerald-500/10 to-teal-400/10",
             },
             {
-              icon: <Shield className="h-6 w-6 md:h-8 md:w-8" />,
-              title: 'Secure Recovery',
-              description: 'Blockchain-verified transactions and encryption',
-              color: 'from-green-500 to-emerald-400',
+              icon: <Lock className="h-8 w-8" />,
+              title: "Blockchain Security",
+              description: "Immutable verification system with end-to-end encryption for complete peace of mind.",
+              color: "from-cyan-500 to-blue-400",
+              bgColor: "from-cyan-500/10 to-blue-400/10",
             },
-          ].map((f, i) => (
-            <div key={i} className="w-full max-w-sm">
+          ].map((feature, i) => (
+            <div key={i} className="w-full max-w-sm mx-auto">
               <div
-                className={`fade-in-section opacity-0 translate-y-10 transition-all duration-700 backdrop-blur-md bg-slate-800/20 p-4 md:p-8 rounded-xl md:rounded-3xl border border-slate-700/30 hover:border-${f.color.split(' ')[0]}/30 relative overflow-hidden group hover:bg-slate-800/30 cursor-pointer`}
+                className={`fade-in-section opacity-0 translate-y-10 transition-all duration-700 backdrop-blur-xl bg-gradient-to-br ${feature.bgColor} p-8 rounded-3xl border border-white/10 hover:border-white/20 relative overflow-hidden group hover:bg-slate-800/20 cursor-pointer transform hover:scale-105`}
                 style={{ transitionDelay: `${i * 150}ms` }}
               >
                 <div
-                  className={`absolute inset-0 bg-gradient-to-br ${f.color}/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
+                  className={`absolute inset-0 bg-gradient-to-br ${feature.color}/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
                 />
                 <div className="relative z-10 text-center">
                   <div
-                    className={`mb-4 md:mb-6 p-2 md:p-4 w-max bg-gradient-to-br ${f.color} rounded-lg md:rounded-2xl group-hover:scale-110 transition-transform duration-300 mx-auto`}
+                    className={`mb-6 p-4 w-max bg-gradient-to-br ${feature.color} rounded-2xl group-hover:scale-110 transition-transform duration-300 mx-auto shadow-lg`}
                   >
-                    {f.icon}
+                    {React.cloneElement(feature.icon, { className: "text-white" })}
                   </div>
-                  <h3 className="text-lg md:text-2xl font-semibold text-white mb-2 md:mb-4">
-                    {f.title}
-                  </h3>
-                  <p className="text-xs md:text-base text-slate-400 leading-relaxed">
-                    {f.description}
-                  </p>
+                  <h3 className="text-2xl font-semibold text-white mb-4">{feature.title}</h3>
+                  <p className="text-slate-400 leading-relaxed">{feature.description}</p>
                 </div>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Trusted by Many */}
-        <div className="mb-12 md:mb-24 fade-in-section opacity-0 translate-y-10 transition-all duration-700">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">Trusted by Many</h2>
-            <p className="text-slate-400">Join thousands of satisfied users worldwide</p>
+        {/* Statistics Section */}
+        <div className="mb-20 fade-in-section opacity-0 translate-y-10 transition-all duration-700">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-white mb-4">Trusted by Thousands</h2>
+            <p className="text-slate-400 text-lg">Join our growing community of successful recoveries</p>
           </div>
-          <div className="flex flex-row justify-center overflow-x-auto md:overflow-visible space-x-4 md:grid md:grid-cols-3 md:gap-6">
-            <div className="flex-shrink-0 bg-slate-800/20 backdrop-blur-md rounded-2xl p-4 md:p-6 text-center transition-all hover:scale-105">
-              <Users className="text-blue-500 w-10 h-10 mx-auto mb-3" />
-              <h3 className="text-xl md:text-2xl font-bold text-white">1K+</h3>
-              <p className="text-slate-400">Satisfied Users</p>
-            </div>
-            <div className="flex-shrink-0 bg-slate-800/20 backdrop-blur-md rounded-2xl p-4 md:p-6 text-center transition-all hover:scale-105">
-              <UserPlus className="text-cyan-400 w-10 h-10 mx-auto mb-3" />
-              <h3 className="text-xl md:text-2xl font-bold text-white">1K+</h3>
-              <p className="text-slate-400">Recovered Items</p>
-            </div>
-            <div className="flex-shrink-0 bg-slate-800/20 backdrop-blur-md rounded-2xl p-4 md:p-6 text-center transition-all hover:scale-105">
-              <Medal className="text-fuchsia-400 w-10 h-10 mx-auto mb-3" />
-              <h3 className="text-xl md:text-2xl font-bold text-white">99.8%</h3>
-              <p className="text-slate-400">Success Rate</p>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+            {[
+              { icon: Users, value: "15K+", label: "Active Users", color: "from-teal-500 to-cyan-400" },
+              { icon: UserPlus, value: "8K+", label: "Items Recovered", color: "from-emerald-500 to-teal-400" },
+              { icon: Medal, value: "99.2%", label: "Success Rate", color: "from-cyan-500 to-blue-400" },
+            ].map((stat, i) => (
+              <div
+                key={i}
+                className="bg-slate-800/30 backdrop-blur-xl rounded-3xl p-8 text-center border border-white/10 hover:border-white/20 transition-all hover:scale-105"
+              >
+                <div className={`inline-flex p-4 rounded-2xl bg-gradient-to-br ${stat.color} mb-4`}>
+                  <stat.icon className="text-white w-8 h-8" />
+                </div>
+                <h3 className="text-3xl font-bold text-white mb-2">{stat.value}</h3>
+                <p className="text-slate-400">{stat.label}</p>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* How It Works */}
-        <div className="mb-12 md:mb-24 fade-in-section opacity-0 translate-y-10 transition-all duration-700">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">How It Works</h2>
-            <p className="text-slate-400">A quick, interactive guide to get you started</p>
+        {/* How It Works Section */}
+        <div className="mb-20 fade-in-section opacity-0 translate-y-10 transition-all duration-700">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-white mb-4">How Trace-It Works</h2>
+            <p className="text-slate-400 text-lg">Three simple steps to recover your lost items</p>
           </div>
-          <div className="flex items-center overflow-x-auto snap-x snap-mandatory px-4 space-x-4 md:justify-between md:overflow-visible">
-            {steps.map((s, i) => (
+          <div className="flex flex-col md:flex-row items-center justify-center space-y-8 md:space-y-0 md:space-x-8">
+            {steps.map((step, i) => (
               <React.Fragment key={i}>
-                <div className="snap-center flex-shrink-0 w-60 bg-slate-800/20 backdrop-blur-md p-6 rounded-xl hover:bg-slate-800/30 transition-all">
-                  <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-full mb-4 mx-auto">
-                    {s.icon}
+                <div className="flex-shrink-0 w-80 bg-slate-800/30 backdrop-blur-xl p-8 rounded-3xl hover:bg-slate-800/40 transition-all border border-white/10 hover:border-white/20 transform hover:scale-105">
+                  <div className="flex items-center justify-center w-16 h-16 bg-gradient-to-br from-teal-500 to-cyan-400 rounded-2xl mb-6 mx-auto shadow-lg">
+                    {step.icon}
                   </div>
-                  <h3 className="text-xl font-semibold text-white mb-2 text-center">{s.label}</h3>
-                  <p className="text-slate-300 text-sm text-center">{s.text}</p>
+                  <h3 className="text-2xl font-semibold text-white mb-4 text-center">{step.label}</h3>
+                  <p className="text-slate-300 text-center leading-relaxed">{step.text}</p>
                 </div>
                 {i < steps.length - 1 && (
-                  <ArrowRight className="flex-shrink-0 text-slate-500 w-6 h-6 mx-2" />
+                  <ArrowRight className="hidden md:block flex-shrink-0 text-slate-500 w-8 h-8" />
                 )}
               </React.Fragment>
             ))}
           </div>
         </div>
 
-        {/* CTA */}
+        {/* Final CTA */}
         <div className="text-center fade-in-section opacity-0 translate-y-10 transition-all duration-700">
-          <Link
-            to="/register"
-            className="relative inline-flex items-center justify-center px-8 py-3 md:px-14 md:py-5 overflow-hidden font-medium text-white group bg-gradient-to-br from-blue-500 to-cyan-400 rounded-lg shadow-xl hover:scale-[1.02] transition-all duration-300 hover:bg-gradient-to-bl"
-          >
-            <span>Start Free Trial</span>
-            <ArrowRight className="ml-2 w-5 h-5 transition-transform group-hover:translate-x-1" />
-          </Link>
+          <div className="bg-gradient-to-r from-teal-500/20 to-cyan-400/20 backdrop-blur-xl rounded-3xl p-12 border border-white/10">
+            <h2 className="text-4xl font-bold text-white mb-6">Ready to Get Started?</h2>
+            <p className="text-slate-300 text-lg mb-8 max-w-2xl mx-auto">
+              Join thousands of users who have successfully recovered their lost items with TraceIt.
+            </p>
+            <Link
+              to="/register"
+              className="inline-flex items-center justify-center px-10 py-5 text-lg font-medium text-white bg-gradient-to-r from-teal-500 to-cyan-400 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
+            >
+              <span>Start Your Free Trial</span>
+              <ArrowRight className="ml-3 w-6 h-6 transition-transform group-hover:translate-x-1" />
+            </Link>
+          </div>
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-700/50 relative z-10">
-        <div className="container mx-auto px-4 py-8 md:py-12">
+      <footer className="border-t border-slate-700/50 relative z-10 bg-slate-900/50 backdrop-blur-xl">
+        <div className="container mx-auto px-4 py-12">
           <div className="flex flex-col md:flex-row justify-between items-start space-y-8 md:space-y-0">
-            <div>
-              <div className="flex items-center space-x-3">
-                <MapPin className="h-5 w-5 text-cyan-400" />
-                <span className="text-base font-medium text-slate-300">TraceIt</span>
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-gradient-to-br from-teal-500 to-cyan-400 rounded-xl">
+                <MapPin className="h-6 w-6 text-white" />
               </div>
-              <p className="mt-2 text-xs text-slate-400 max-w-xs">
-                Secure, decentralized item recovery solutions
-              </p>
+              <span className="text-xl font-bold text-slate-300">TraceIt</span>
             </div>
-            <div className="grid grid-cols-2 gap-6 md:gap-16">
+            <div className="grid grid-cols-2 gap-8">
               <div>
-                <h4 className="text-sm text-slate-300 font-medium mb-2">Solutions</h4>
-                <Link to="/features" className="block text-xs text-slate-400 hover:text-cyan-400 mb-1">Features</Link>
-                <Link to="/security" className="block text-xs text-slate-400 hover:text-cyan-400 mb-1">Security</Link>
-                <Link to="/enterprise" className="block text-xs text-slate-400 hover:text-cyan-400">Enterprise</Link>
+                <h4 className="text-slate-300 font-medium mb-3">Product</h4>
+                <div className="space-y-2">
+                  <Link to="/features" className="block text-slate-400 hover:text-teal-400 transition-colors">
+                    Features
+                  </Link>
+                  <Link to="/security" className="block text-slate-400 hover:text-teal-400 transition-colors">
+                    Security
+                  </Link>
+                </div>
               </div>
               <div>
-                <h4 className="text-sm text-slate-300 font-medium mb-2">Company</h4>
-                <Link to="/about" className="block text-xs text-slate-400 hover:text-cyan-400 mb-1">About</Link>
-                <Link to="/blog" className="block text-xs text-slate-400 hover:text-cyan-400 mb-1">Blog</Link>
-                <Link to="/careers" className="block text-xs text-slate-400 hover:text-cyan-400">Careers</Link>
+                <h4 className="text-slate-300 font-medium mb-3">Company</h4>
+                <div className="space-y-2">
+                  <Link to="/about" className="block text-slate-400 hover:text-teal-400 transition-colors">
+                    About
+                  </Link>
+                  <Link to="/contact" className="block text-slate-400 hover:text-teal-400 transition-colors">
+                    Contact
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
-          <div className="border-t border-slate-700/50 mt-6 pt-4 text-center text-xs text-slate-400">
-            &copy; 2024 TraceIt. All rights reserved.{' '}
-            <Link to="/terms" className="hover:text-white">Terms</Link> •{' '}
-            <Link to="/privacy" className="hover:text-white">Privacy</Link>
+          <div className="border-t border-slate-700/50 mt-8 pt-8 text-center text-slate-400">
+            <p>&copy; 2025 TraceIt. All rights reserved. Built with ❤️ for the community.</p>
           </div>
         </div>
       </footer>
     </div>
-  );
-};
+  )
+}
 
-export default LandingPage;
+export default LandingPage

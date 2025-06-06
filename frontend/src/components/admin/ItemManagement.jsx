@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Edit, Trash2, Eye, Search, MapPin } from 'lucide-react';
+import { Edit, Trash2, Eye, Search, MapPin, Plus, Filter, Grid, List } from 'lucide-react';
 import { 
   doc, 
   updateDoc, 
@@ -23,12 +23,13 @@ const ItemManagement = ({ onAddItem, currentUser }) => {
   const [editItemModal, setEditItemModal] = useState(null);
   const [toast, setToast] = useState(null);
   const [items, setItems] = useState([]);
+  const [viewMode, setViewMode] = useState('table');
 
   const categories = ['All Categories', 'National IDs', 'Number Plates', 'Driving Permits', 'Academic Documents', 'Other Items'];
   const tabs = [
-    { id: 'available', label: 'Available Items' },
-    { id: 'pending', label: 'Pending Claims' },
-    { id: 'claimed', label: 'Claimed Items' }
+    { id: 'available', label: 'Available Items', count: items.filter(i => i.status === 'unclaimed').length },
+    { id: 'pending', label: 'Pending Claims', count: items.filter(i => i.status === 'pending_claim').length },
+    { id: 'claimed', label: 'Claimed Items', count: items.filter(i => i.status === 'claimed').length }
   ];
 
   useEffect(() => {
@@ -55,6 +56,8 @@ const ItemManagement = ({ onAddItem, currentUser }) => {
   };
 
   const handleDeleteItem = async (itemId) => {
+    if (!window.confirm('Are you sure you want to delete this item?')) return;
+    
     try {
       const itemRef = doc(db, 'items', itemId);
       const itemSnap = await getDoc(itemRef);
@@ -173,159 +176,283 @@ const ItemManagement = ({ onAddItem, currentUser }) => {
     }
   };
 
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'unclaimed':
+        return 'bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-800 border border-emerald-200';
+      case 'pending_claim':
+        return 'bg-gradient-to-r from-amber-100 to-orange-100 text-amber-800 border border-amber-200';
+      case 'claimed':
+        return 'bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-800 border border-blue-200';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   return (
-    <div className="p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 p-6">
+      {/* Toast Notification */}
       {toast && (
-        <div className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg ${
-          toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'
-        } text-white z-50`}>
-          {toast.message}
+        <div className={`fixed top-6 right-6 p-4 rounded-xl shadow-2xl backdrop-blur-md border z-50 transform transition-all duration-300 ${
+          toast.type === 'success' 
+            ? 'bg-gradient-to-r from-emerald-500/90 to-teal-500/90 text-white border-emerald-300' 
+            : 'bg-gradient-to-r from-red-500/90 to-pink-500/90 text-white border-red-300'
+        }`}>
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 rounded-full bg-white animate-pulse"></div>
+            <span className="font-medium">{toast.message}</span>
+          </div>
         </div>
       )}
 
-      <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
-        <button
-          onClick={onAddItem}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors"
-        >
-          Add New Item
-        </button>
-
-        <div className="flex flex-col md:flex-row md:items-center md:space-x-4 space-y-2 md:space-y-0">
-          <div className="flex-1 relative">
-            <input
-              type="text"
-              placeholder="Search items..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border rounded-lg"
-            />
-            <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+      {/* Header Section */}
+      <div className="bg-white/70 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6 mb-8">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          {/* Title and Add Button */}
+          <div className="flex items-center justify-between">
+            <button
+              onClick={onAddItem}
+              className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-xl hover:from-teal-700 hover:to-cyan-700 focus:outline-none focus:ring-4 focus:ring-teal-200 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            >
+              <Plus className="h-5 w-5" />
+              <span className="font-medium">Add New Item</span>
+            </button>
           </div>
 
-          <select
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            className="px-4 py-2 border rounded-lg"
-          >
-            {categories.map(category => (
-              <option key={category} value={category}>{category}</option>
-            ))}
-          </select>
-        </div>
-      </div>
+          {/* Search and Filters */}
+          <div className="flex flex-col sm:flex-row gap-4 lg:w-auto w-full">
+            <div className="relative flex-1 lg:w-80">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search items by name or details..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-12 pr-4 py-3 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-xl focus:ring-4 focus:ring-teal-200 focus:border-teal-400 transition-all duration-300"
+              />
+            </div>
 
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-4">
-            {tabs.map(tab => (
+            <div className="relative">
+              <Filter className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <select
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+                className="pl-12 pr-8 py-3 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-xl focus:ring-4 focus:ring-teal-200 focus:border-teal-400 transition-all duration-300 appearance-none cursor-pointer"
+              >
+                {categories.map(category => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* View Mode Toggle */}
+            <div className="flex bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200 p-1">
               <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-2 rounded-lg ${
-                  activeTab === tab.id
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                onClick={() => setViewMode('table')}
+                className={`p-2 rounded-lg transition-all duration-300 ${
+                  viewMode === 'table' 
+                    ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-md' 
+                    : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
-                {tab.label}
+                <List className="h-5 w-5" />
               </button>
-            ))}
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-2 rounded-lg transition-all duration-300 ${
+                  viewMode === 'grid' 
+                    ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-md' 
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <Grid className="h-5 w-5" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Item
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Category
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Location
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredItems.map(item => (
-                <tr key={item.id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      {item.imageUrl && (
-                        <img
-                          src={item.imageUrl}
-                          alt={item.name}
-                          className="h-10 w-10 rounded-full mr-3"
-                        />
-                      )}
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{item.name}</div>
-                        <div className="text-sm text-gray-500">{item.details}</div>
+      {/* Tabs Section */}
+      <div className="bg-white/70 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6 mb-8">
+        <div className="flex flex-wrap gap-2">
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-medium transition-all duration-300 ${
+                activeTab === tab.id
+                  ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg transform scale-105'
+                  : 'bg-white/60 text-gray-700 hover:bg-white/80 hover:shadow-md'
+              }`}
+            >
+              <span>{tab.label}</span>
+              <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                activeTab === tab.id 
+                  ? 'bg-white/20 text-white' 
+                  : 'bg-teal-100 text-teal-700'
+              }`}>
+                {tab.count}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Items Display */}
+      <div className="bg-white/70 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 overflow-hidden">
+        {viewMode === 'table' ? (
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead className="bg-gradient-to-r from-teal-50 to-cyan-50 border-b border-teal-100">
+                <tr>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-teal-800">Item</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-teal-800">Category</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-teal-800">Location</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-teal-800">Status</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-teal-800">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {filteredItems.map((item, index) => (
+                  <tr key={item.id} className="hover:bg-gradient-to-r hover:from-teal-50/50 hover:to-cyan-50/50 transition-all duration-300">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center space-x-4">
+                        {item.imageUrl ? (
+                          <img
+                            src={item.imageUrl || "/placeholder.svg"}
+                            alt={item.name}
+                            className="h-12 w-12 rounded-xl object-cover border-2 border-white shadow-md"
+                          />
+                        ) : (
+                          <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-teal-100 to-cyan-100 flex items-center justify-center border-2 border-white shadow-md">
+                            <span className="text-teal-600 font-semibold text-sm">
+                              {item.name?.charAt(0)?.toUpperCase() || '?'}
+                            </span>
+                          </div>
+                        )}
+                        <div>
+                          <div className="font-semibold text-gray-900">{item.name}</div>
+                          <div className="text-sm text-gray-600 max-w-xs truncate">{item.details}</div>
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm text-gray-900">{item.category}</span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center text-sm text-gray-900">
-                      <MapPin className="h-4 w-4 mr-1" />
-                      {item.location}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      item.status === 'unclaimed'
-                        ? 'bg-green-100 text-green-800'
-                        : item.status === 'pending_claim'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-blue-100 text-blue-800'
-                    }`}>
-                      {item.status}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-800 border border-blue-200">
+                        {item.category}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center space-x-2 text-gray-700">
+                        <MapPin className="h-4 w-4 text-teal-500" />
+                        <span className="text-sm">{item.location}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(item.status)}`}>
+                        {item.status?.replace('_', ' ').toUpperCase()}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center space-x-2">
+                        {item.status === 'pending_claim' && (
+                          <button
+                            onClick={() => viewClaimDetails(item)}
+                            className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-all duration-300 hover:scale-110"
+                            title="View Claims"
+                          >
+                            <Eye className="h-5 w-5" />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleEditItem(item)}
+                          className="p-2 text-amber-600 hover:bg-amber-100 rounded-lg transition-all duration-300 hover:scale-110"
+                          title="Edit Item"
+                        >
+                          <Edit className="h-5 w-5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteItem(item.id)}
+                          className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-all duration-300 hover:scale-110"
+                          title="Delete Item"
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-6">
+            {filteredItems.map((item) => (
+              <div key={item.id} className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-white/20 overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                {item.imageUrl ? (
+                  <img
+                    src={item.imageUrl || "/placeholder.svg"}
+                    alt={item.name}
+                    className="w-full h-48 object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-48 bg-gradient-to-br from-teal-100 to-cyan-100 flex items-center justify-center">
+                    <span className="text-4xl font-bold text-teal-600">
+                      {item.name?.charAt(0)?.toUpperCase() || '?'}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center space-x-2">
+                  </div>
+                )}
+                <div className="p-4">
+                  <h3 className="font-semibold text-gray-900 mb-2">{item.name}</h3>
+                  <p className="text-sm text-gray-600 mb-3 line-clamp-2">{item.details}</p>
+                  <div className="flex items-center space-x-2 mb-3">
+                    <MapPin className="h-4 w-4 text-teal-500" />
+                    <span className="text-sm text-gray-700">{item.location}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
+                      {item.status?.replace('_', ' ').toUpperCase()}
+                    </span>
+                    <div className="flex items-center space-x-1">
                       {item.status === 'pending_claim' && (
                         <button
                           onClick={() => viewClaimDetails(item)}
-                          className="text-blue-600 hover:text-blue-800"
+                          className="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg transition-all duration-300"
                         >
-                          <Eye className="h-5 w-5" />
+                          <Eye className="h-4 w-4" />
                         </button>
                       )}
                       <button
-                        onClick={() => handleEditItem(item)} // Use local function here
-                        className="text-yellow-600 hover:text-yellow-800"
+                        onClick={() => handleEditItem(item)}
+                        className="p-1.5 text-amber-600 hover:bg-amber-100 rounded-lg transition-all duration-300"
                       >
-                        <Edit className="h-5 w-5" />
+                        <Edit className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => handleDeleteItem(item.id)}
-                        className="text-red-600 hover:text-red-800"
+                        className="p-1.5 text-red-600 hover:bg-red-100 rounded-lg transition-all duration-300"
                       >
-                        <Trash2 className="h-5 w-5" />
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {filteredItems.length === 0 && (
+          <div className="text-center py-16">
+            <div className="w-24 h-24 mx-auto mb-4 bg-gradient-to-br from-teal-100 to-cyan-100 rounded-full flex items-center justify-center">
+              <Search className="h-12 w-12 text-teal-500" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">No items found</h3>
+            <p className="text-gray-600">Try adjusting your search criteria or add a new item.</p>
+          </div>
+        )}
       </div>
 
+      {/* Modals */}
       {claimDetailsModal && (
         <ClaimDetailsModal
           claim={claimDetailsModal.claim}
@@ -334,7 +461,7 @@ const ItemManagement = ({ onAddItem, currentUser }) => {
           onClaimAction={handleClaimAction}
         />
       )}
-      {/* Edit Item Modal */}
+
       {editItemModal && (
         <EditItemModal
           item={editItemModal}

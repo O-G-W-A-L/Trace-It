@@ -4,10 +4,10 @@ const Toast = ({ toast, onClose }) => {
   useEffect(() => {
     if (toast) {
       const timer = setTimeout(() => {
-        onClose(); // This will remove the toast after 3 seconds
+        onClose();
       }, 3000);
       
-      return () => clearTimeout(timer); // Clean up the timer if the component unmounts
+      return () => clearTimeout(timer);
     }
   }, [toast, onClose]);
 
