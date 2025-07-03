@@ -8,15 +8,15 @@ app = create_app()
 CORS(app, resources={
     r"/*": {
         "origins": [
-            "http://localhost:5173",  # Local development
-            "https://trace-it-tau.vercel.app",  # Production URL
-            "https://accounts.google.com",  # Google OAuth
-            "https://www.googleapis.com",  # Google API
-            "https://securetoken.google.com",  # Firebase token exchange
+            "http://localhost:5173",
+            "https://trace-it-tau.vercel.app",
+            "https://accounts.google.com",
+            "https://www.googleapis.com",
+            "https://securetoken.google.com",
         ],
         "supports_credentials": True,
         "allow_headers": ["Authorization", "Content-Type"],
-        "allow_methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],  # Added allowed methods
+        "allow_methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         "expose_headers": ["Content-Type", "Authorization"]
     }
 })
@@ -26,7 +26,7 @@ CORS(app, resources={
 def apply_cors_headers(response):
     response.headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups"
     response.headers["Cross-Origin-Embedder-Policy"] = "require-corp"
-    response.headers["Access-Control-Allow-Origin"] = "*"  # Allow all origins or specify origins explicitly
+    response.headers["Access-Control-Allow-Origin"] = "*"
     response.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
     response.headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,DELETE,OPTIONS"
     response.headers["Access-Control-Allow-Credentials"] = "true"

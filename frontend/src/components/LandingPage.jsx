@@ -1,289 +1,416 @@
-"use client"
-
 import React, { useEffect } from "react"
+import { Search, MapPin, Shield, ArrowRight, Sparkles, Users, CheckCircle, Zap, Globe, Lock, Star, Play } from "lucide-react"
 import { Link } from "react-router-dom"
-import { Search, MapPin, Shield, ArrowRight, Sparkles, Users, UserPlus, Medal, Zap, Globe, Lock } from "lucide-react"
-
-const steps = [
-  {
-    icon: <Search className="w-6 h-6 text-white" />,
-    label: "Search",
-    text: "Upload a photo or describe your item with AI-powered precision.",
-  },
-  {
-    icon: <MapPin className="w-6 h-6 text-white" />,
-    label: "Locate",
-    text: "Visualize real-time matches on an interactive, intuitive map.",
-  },
-  {
-    icon: <Shield className="w-6 h-6 text-white" />,
-    label: "Recover",
-    text: "Securely claim your lost item with blockchain verification.",
-  },
-]
+import Footer from "./user/Footer"
 
 const LandingPage = () => {
   useEffect(() => {
-    const handleScroll = () => {
-      document.querySelectorAll(".fade-in-section").forEach((el) => {
-        if (el.getBoundingClientRect().top < window.innerHeight - 100) {
-          el.classList.add("opacity-100", "translate-y-0")
-          el.classList.remove("opacity-0", "translate-y-10")
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('animate-fade-in')
         }
       })
-    }
-    window.addEventListener("scroll", handleScroll)
-    handleScroll()
-    return () => window.removeEventListener("scroll", handleScroll)
+    })
+    
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el))
+    return () => observer.disconnect()
   }, [])
 
+  // Navigation functions are handled via Link component for client-side routing
+  const handleAbout = () => window.location.href = '/about'
+  const handleFeatures = () => window.location.href = '/features'
+  const handleSecurity = () => window.location.href = '/security'
+  const handleContact = () => window.location.href = '/contact'
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
-      {/* Enhanced Background Elements */}
-      <div className="absolute inset-0 opacity-20" aria-hidden="true">
-        {[...Array(6)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-32 h-32 md:w-48 md:h-48 bg-gradient-to-r from-teal-500/30 to-cyan-400/30 rounded-full blur-3xl animate-float"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${i * 2}s`,
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Navigation */}
-      <div className="container mx-auto px-4 py-4 md:py-6 relative z-10">
-        <nav className="flex justify-between items-center backdrop-blur-xl bg-slate-900/30 rounded-2xl px-4 md:px-6 py-4 shadow-2xl border border-white/10">
-          {/* Logo */}
-          <div className="flex items-center space-x-3 group">
-            <Link to="/" className="flex items-center space-x-3">
-              <div className="relative p-2 md:p-3 bg-gradient-to-br from-teal-500 to-cyan-400 rounded-xl md:rounded-2xl transform group-hover:rotate-12 transition-all duration-500 shadow-lg">
-                <MapPin className="h-5 w-5 md:h-6 md:w-6 text-white" />
-                <Sparkles className="absolute -top-1 -right-1 md:-top-2 md:-right-2 h-3 w-3 md:h-4 md:w-4 text-yellow-400 animate-pulse" />
-              </div>
-              <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-teal-400 to-cyan-300 bg-clip-text text-transparent tracking-tight">
-                TraceIt
-              </span>
-            </Link>
-          </div>
-
-          {/* Navigation Links */}
-          <div className="flex items-center">
-            <Link
-              to="/login"
-              className="text-center text-sm md:text-base text-slate-300 hover:text-white transition-all duration-300 hover:bg-slate-800/50 px-4 md:px-6 py-2 rounded-full border border-slate-700/50 hover:border-teal-400/30 relative group"
-            >
-              <span className="relative z-10">Login</span>
-              <div className="absolute inset-0 bg-gradient-to-r from-teal-400/20 to-cyan-500/20 opacity-0 group-hover:opacity-100 rounded-full transition-opacity duration-300" />
-            </Link>
-            <Link
-              to="/register"
-              className="hidden md:inline-flex ml-3 relative items-center justify-center px-4 md:px-8 py-2 md:py-3 overflow-hidden font-medium group bg-gradient-to-br from-teal-500 to-cyan-400 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
-            >
-              <span className="absolute right-0 w-6 h-6 md:w-8 md:h-8 -mt-8 md:-mt-12 transition-all duration-1000 transform translate-x-8 md:translate-x-12 bg-white opacity-10 rotate-12 group-hover:-translate-x-96 ease" />
-              <span className="relative text-white flex items-center space-x-1 md:space-x-2 text-sm md:text-base">
-                <span>Get Started</span>
-                <ArrowRight className="h-3 w-3 md:h-4 md:w-4 transition-transform group-hover:translate-x-1" />
-              </span>
-            </Link>
-          </div>
-        </nav>
-      </div>
-
-      {/* Hero Section */}
-      <main className="container mx-auto px-4 pt-12 md:pt-20 pb-20 md:pb-32 relative z-10">
-        <div className="text-center mb-16 md:mb-20 fade-in-section opacity-0 translate-y-10 transition-all duration-700">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold mb-6 md:mb-8 bg-gradient-to-r from-teal-400 via-cyan-300 to-teal-400 bg-clip-text text-transparent leading-tight px-4">
-            <span className="block">Reuniting You With</span>
-            <span className="relative inline-block mt-2">
-              <span className="relative z-10 text-white">What Matters Most</span>
-              <div className="absolute -bottom-1 md:-bottom-2 left-0 right-0 h-0.5 md:h-1 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-full z-0"></div>
-            </span>
-          </h1>
-          <p className="text-base md:text-xl text-slate-300 max-w-xs sm:max-w-2xl md:max-w-3xl mx-auto leading-relaxed mb-8 md:mb-10 px-4">
-            Empowering communities with AI-driven lost item recovery, secured by blockchain technology and updated in
-            real-time.
-          </p>
-
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center px-4">
-            <Link
-              to="/register"
-              className="w-full sm:w-auto group relative inline-flex items-center justify-center px-6 md:px-8 py-3 md:py-4 text-base md:text-lg font-medium text-white bg-gradient-to-r from-teal-500 to-cyan-400 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
-            >
-              <Zap className="mr-2 h-4 w-4 md:h-5 md:w-5" />
-              Start Your Journey
-              <ArrowRight className="ml-2 h-4 w-4 md:h-5 md:w-5 transition-transform group-hover:translate-x-1" />
-            </Link>
-            <Link
-              to="/about"
-              className="w-full sm:w-auto group inline-flex items-center justify-center px-6 md:px-8 py-3 md:py-4 text-base md:text-lg font-medium text-slate-300 border border-slate-600 rounded-2xl hover:bg-slate-800/50 transition-all duration-300"
-            >
-              Learn More
-            </Link>
-          </div>
-        </div>
-
-        {/* Enhanced Features Section */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
-          {[
-            {
-              icon: <Search className="h-8 w-8" />,
-              title: "AI-Powered Search",
-              description:
-                "Advanced image recognition and natural language processing to find your lost items instantly.",
-              color: "from-teal-500 to-cyan-400",
-              bgColor: "from-teal-500/10 to-cyan-400/10",
-            },
-            {
-              icon: <Globe className="h-8 w-8" />,
-              title: "Real-Time Tracking",
-              description:
-                "Live location updates with community-powered notifications ensuring you never miss a match.",
-              color: "from-emerald-500 to-teal-400",
-              bgColor: "from-emerald-500/10 to-teal-400/10",
-            },
-            {
-              icon: <Lock className="h-8 w-8" />,
-              title: "Blockchain Security",
-              description: "Immutable verification system with end-to-end encryption for complete peace of mind.",
-              color: "from-cyan-500 to-blue-400",
-              bgColor: "from-cyan-500/10 to-blue-400/10",
-            },
-          ].map((feature, i) => (
-            <div key={i} className="w-full max-w-sm mx-auto">
-              <div
-                className={`fade-in-section opacity-0 translate-y-10 transition-all duration-700 backdrop-blur-xl bg-gradient-to-br ${feature.bgColor} p-8 rounded-3xl border border-white/10 hover:border-white/20 relative overflow-hidden group hover:bg-slate-800/20 cursor-pointer transform hover:scale-105`}
-                style={{ transitionDelay: `${i * 150}ms` }}
-              >
-                <div
-                  className={`absolute inset-0 bg-gradient-to-br ${feature.color}/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
-                />
-                <div className="relative z-10 text-center">
-                  <div
-                    className={`mb-6 p-4 w-max bg-gradient-to-br ${feature.color} rounded-2xl group-hover:scale-110 transition-transform duration-300 mx-auto shadow-lg`}
-                  >
-                    {React.cloneElement(feature.icon, { className: "text-white" })}
-                  </div>
-                  <h3 className="text-2xl font-semibold text-white mb-4">{feature.title}</h3>
-                  <p className="text-slate-400 leading-relaxed">{feature.description}</p>
-                </div>
-              </div>
-            </div>
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Hero Content with Background Extending to Nav */}
+      <div className="w-full relative z-10 bg-gradient-to-br from-slate-100 to-indigo-100 rounded-r-[6rem] rounded-l-0 rounded-t-0 rounded-b-0 overflow-hidden">
+        {/* Subtle background elements */}
+        <div className="absolute inset-0 opacity-5">
+          {[...Array(3)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-96 h-96 bg-gradient-to-r from-teal-400 to-cyan-300 rounded-full blur-3xl"
+              style={{
+                left: `${20 + i * 30}%`,
+                top: `${10 + i * 20}%`,
+                animationDelay: `${i * 3}s`,
+              }}
+            />
           ))}
         </div>
 
-        {/* Statistics Section */}
-        <div className="mb-20 fade-in-section opacity-0 translate-y-10 transition-all duration-700">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-white mb-4">Trusted by Thousands</h2>
-            <p className="text-slate-400 text-lg">Join our growing community of successful recoveries</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            {[
-              { icon: Users, value: "15K+", label: "Active Users", color: "from-teal-500 to-cyan-400" },
-              { icon: UserPlus, value: "8K+", label: "Items Recovered", color: "from-emerald-500 to-teal-400" },
-              { icon: Medal, value: "99.2%", label: "Success Rate", color: "from-cyan-500 to-blue-400" },
-            ].map((stat, i) => (
-              <div
-                key={i}
-                className="bg-slate-800/30 backdrop-blur-xl rounded-3xl p-8 text-center border border-white/10 hover:border-white/20 transition-all hover:scale-105"
+        {/* Navigation */}
+        <nav className="container mx-auto px-4 py-6 relative z-20">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center space-x-3">
+              <div className="relative p-2 bg-gradient-to-br from-teal-500 to-cyan-400 rounded-xl shadow-lg">
+                <MapPin className="h-6 w-6 text-white" />
+                <Sparkles className="absolute -top-1 -right-1 h-3 w-3 text-yellow-400" />
+              </div>
+              <span className="text-2xl font-bold bg-gradient-to-r from-teal-600 to-cyan-500 bg-clip-text text-transparent">
+                TraceIt
+              </span>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <Link
+                to="/login"
+                className="px-6 py-2 text-slate-700 hover:text-teal-600 font-medium transition-colors"
               >
-                <div className={`inline-flex p-4 rounded-2xl bg-gradient-to-br ${stat.color} mb-4`}>
-                  <stat.icon className="text-white w-8 h-8" />
+                Log in
+              </Link>
+              <Link
+                to="/register"
+                className="px-6 py-2 bg-gradient-to-r from-teal-500 to-cyan-400 text-white rounded-lg hover:shadow-lg transition-all duration-300 font-medium"
+              >
+                Sign Up Free
+              </Link>
+            </div>
+          </div>
+        </nav>
+
+        {/* Hero Content */}
+        <div className="container mx-auto px-6 sm:px-8 lg:px-4 py-16 relative z-20">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center min-h-[80vh]">
+            {/* Left Content */}
+            <div className="lg:pr-8">
+              <h1 className="text-4xl md:text-6xl font-bold text-slate-800 mb-6 leading-tight">
+                Lost Item Recovery
+                <span className="block text-transparent bg-gradient-to-r from-teal-500 to-cyan-400 bg-clip-text">
+                  Done Right
+                </span>
+              </h1>
+              <p className="text-xl text-slate-600 mb-8 leading-relaxed">
+                Reunite with what matters most through AI-powered search — trusted by 10,000+ users.
+              </p>
+              
+              {/* Email Signup Form */}
+              <div className="flex flex-col sm:flex-row gap-3 mb-8">
+                <input
+                  type="email"
+                  placeholder="Your email address"
+                  className="flex-1 px-6 py-4 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-slate-700 placeholder-slate-400"
+                />
+                <Link to="/register" className="px-8 py-4 bg-gradient-to-r from-teal-500 to-cyan-400 text-white rounded-xl font-semibold hover:shadow-lg transition-all duration-300 whitespace-nowrap">
+                  Sign up free
+                </Link>
+              </div>
+
+              {/* Trust Indicators */}
+              <div className="flex flex-wrap items-center gap-6 text-sm text-slate-600">
+                <div className="flex items-center">
+                  <CheckCircle className="w-4 h-4 text-teal-500 mr-2" />
+                  Free to start
                 </div>
-                <h3 className="text-3xl font-bold text-white mb-2">{stat.value}</h3>
-                <p className="text-slate-400">{stat.label}</p>
+                <div className="flex items-center">
+                  <CheckCircle className="w-4 h-4 text-teal-500 mr-2" />
+                  No credit card required
+                </div>
+                <div className="flex items-center">
+                  <CheckCircle className="w-4 h-4 text-teal-500 mr-2" />
+                  Secure & private
+                </div>
+              </div>
+            </div>
+
+            {/* Right Content - Dashboard Preview */}
+            <div className="relative">
+              <div className="relative bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden transform scale-90 sm:scale-95 lg:scale-100">
+                {/* Browser Header */}
+                <div className="bg-slate-100 px-2 py-2 sm:px-4 sm:py-3 flex items-center border-b border-slate-200">
+                  <div className="flex space-x-1 sm:space-x-2">
+                    <div className="w-2 h-2 sm:w-3 sm:h-3 bg-red-400 rounded-full"></div>
+                    <div className="w-2 h-2 sm:w-3 sm:h-3 bg-yellow-400 rounded-full"></div>
+                    <div className="w-2 h-2 sm:w-3 sm:h-3 bg-green-400 rounded-full"></div>
+                  </div>
+                  <div className="flex-1 mx-2 sm:mx-4">
+                    <div className="bg-white rounded-md px-2 py-0.5 sm:px-3 sm:py-1 text-xs text-slate-500">
+                      traceit.com/dashboard
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dashboard Content */}
+                <div className="p-3 sm:p-6 bg-gradient-to-br from-slate-50 to-white">
+                  {/* Header */}
+                  <div className="flex items-center justify-between mb-3 sm:mb-6">
+                    <div className="flex items-center space-x-2 sm:space-x-3">
+                      <div className="p-1 sm:p-2 bg-gradient-to-br from-teal-500 to-cyan-400 rounded-lg">
+                        <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                      </div>
+                      <span className="font-bold text-slate-800 text-sm sm:text-base">Dashboard</span>
+                    </div>
+                    <div className="flex space-x-1 sm:space-x-2">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-slate-200 rounded-full"></div>
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-slate-200 rounded-full"></div>
+                    </div>
+                  </div>
+
+                  {/* Stats Cards */}
+                  <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-3 sm:mb-6">
+                    <div className="bg-white p-2 sm:p-4 rounded-xl shadow-sm border border-slate-100">
+                      <div className="text-lg sm:text-2xl font-bold text-teal-600">12</div>
+                      <div className="text-xs text-slate-500">Active searches</div>
+                    </div>
+                    <div className="bg-white p-2 sm:p-4 rounded-xl shadow-sm border border-slate-100">
+                      <div className="text-lg sm:text-2xl font-bold text-emerald-600">3</div>
+                      <div className="text-xs text-slate-500">Items found</div>
+                    </div>
+                    <div className="bg-white p-2 sm:p-4 rounded-xl shadow-sm border border-slate-100">
+                      <div className="text-lg sm:text-2xl font-bold text-blue-600">89%</div>
+                      <div className="text-xs text-slate-500">Success rate</div>
+                    </div>
+                  </div>
+
+                  {/* Recent Activity */}
+                  <div className="bg-white rounded-xl p-2 sm:p-4 border border-slate-100">
+                    <h3 className="font-semibold text-slate-800 mb-2 sm:mb-3 text-sm sm:text-base">Recent Activity</h3>
+                    <div className="space-y-2 sm:space-y-3">
+                      <div className="flex items-center space-x-2 sm:space-x-3">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-teal-400 to-cyan-300 rounded-lg flex items-center justify-center">
+                          <Search className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-xs sm:text-sm font-medium text-slate-800">iPhone 14 Pro</div>
+                          <div className="text-xs text-slate-500">Lost in downtown area</div>
+                        </div>
+                        <div className="text-xs text-teal-600 font-medium">Active</div>
+                      </div>
+                      <div className="flex items-center space-x-2 sm:space-x-3">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-emerald-400 to-teal-300 rounded-lg flex items-center justify-center">
+                          <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-xs sm:text-sm font-medium text-slate-800">Leather Wallet</div>
+                          <div className="text-xs text-slate-500">Found at Central Park</div>
+                        </div>
+                        <div className="text-xs text-emerald-600 font-medium">Found</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Floating notification */}
+                  <div className="absolute top-16 sm:top-20 right-2 sm:right-4 bg-white rounded-lg shadow-lg border border-slate-200 p-2 sm:p-3 animate-pulse">
+                    <div className="flex items-center space-x-1 sm:space-x-2">
+                      <div className="w-1 h-1 sm:w-2 sm:h-2 bg-teal-500 rounded-full"></div>
+                      <div className="text-xs text-slate-700">New match found!</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Floating elements */}
+              <div className="absolute -top-4 -left-4 w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-teal-400 to-cyan-300 rounded-full opacity-20 animate-bounce"></div>
+              <div className="absolute -bottom-4 -right-4 w-8 h-8 sm:w-12 sm:h-12 bg-gradient-to-br from-emerald-400 to-teal-300 rounded-full opacity-20 animate-bounce" style={{animationDelay: '1s'}}></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Rest of the page */}
+      <main className="container mx-auto px-4 relative z-10">
+
+        {/* Problem & Solution */}
+        <div className="py-16 fade-in">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-slate-800 mb-4">
+              Lost items keeping you up at night?
+            </h2>
+            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+              Your search is packed with frustration, but are you truly finding results?
+            </p>
+          </div>
+          
+          <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
+            {/* Desktop Layout */}
+            <div className="hidden md:grid md:grid-cols-2">
+              <div className="p-8 border-r border-slate-200">
+                <h3 className="text-2xl font-bold text-slate-800 mb-6">The problem:</h3>
+                <div className="space-y-4">
+                  {[
+                    "Hours of fruitless searching with no system",
+                    "Emotional stress from losing precious items",
+                    "No centralized recovery network exists",
+                    "Scattered information across platforms",
+                    "No verification for found items"
+                  ].map((problem, i) => (
+                    <div key={i} className="flex items-start">
+                      <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center mt-0.5 mr-3 flex-shrink-0">
+                        <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                      </div>
+                      <span className="text-slate-600">{problem}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="p-8 bg-gradient-to-br from-teal-50 to-cyan-50">
+                <h3 className="text-2xl font-bold text-slate-800 mb-6">The TraceIt solution:</h3>
+                <div className="space-y-4">
+                  {[
+                    "Centralized search system delivers instant matches",
+                    "Real-time community alerts notify you immediately",
+                    "Blockchain verification ensures authentic ownership",
+                    "Centralized platform connects all recovery efforts",
+                    "Secure meetup locations for safe exchanges"
+                  ].map((solution, i) => (
+                    <div key={i} className="flex items-start">
+                      <CheckCircle className="w-6 h-6 text-teal-500 mt-0.5 mr-3 flex-shrink-0" />
+                      <span className="text-slate-600">{solution}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Mobile Layout */}
+            <div className="md:hidden">
+              <div className="p-6 space-y-8">
+                <div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-4">The problem:</h3>
+                  <div className="flex items-start mb-4">
+                    <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center mt-0.5 mr-3 flex-shrink-0">
+                      <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                    </div>
+                    <span className="text-slate-600">Hours of fruitless searching with no system</span>
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-4">The TraceIt solution:</h3>
+                  <div className="flex items-start mb-6">
+                    <CheckCircle className="w-6 h-6 text-teal-500 mt-0.5 mr-3 flex-shrink-0" />
+                    <span className="text-slate-600">Centralized search system delivers instant matches</span>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-4">The problem:</h3>
+                  <div className="flex items-start mb-4">
+                    <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center mt-0.5 mr-3 flex-shrink-0">
+                      <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                    </div>
+                    <span className="text-slate-600">Emotional stress from losing precious items</span>
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-4">The TraceIt solution:</h3>
+                  <div className="flex items-start mb-6">
+                    <CheckCircle className="w-6 h-6 text-teal-500 mt-0.5 mr-3 flex-shrink-0" />
+                    <span className="text-slate-600">Real-time community alerts notify you immediately</span>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-4">The problem:</h3>
+                  <div className="flex items-start mb-4">
+                    <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center mt-0.5 mr-3 flex-shrink-0">
+                      <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                    </div>
+                    <span className="text-slate-600">No centralized recovery network exists</span>
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-4">The TraceIt solution:</h3>
+                  <div className="flex items-start mb-6">
+                    <CheckCircle className="w-6 h-6 text-teal-500 mt-0.5 mr-3 flex-shrink-0" />
+                    <span className="text-slate-600">Blockchain verification ensures authentic ownership</span>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-4">The problem:</h3>
+                  <div className="flex items-start mb-4">
+                    <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center mt-0.5 mr-3 flex-shrink-0">
+                      <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                    </div>
+                    <span className="text-slate-600">Scattered information across platforms</span>
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-4">The TraceIt solution:</h3>
+                  <div className="flex items-start">
+                    <CheckCircle className="w-6 h-6 text-teal-500 mt-0.5 mr-3 flex-shrink-0" />
+                    <span className="text-slate-600">Centralized platform connects all recovery efforts</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Powerful Features */}
+        <div className="py-16 fade-in">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-slate-800 mb-4">
+              Powerful features, minimum effort
+            </h2>
+            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+              Built for everyone, designed for results
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {[
+              {
+                icon: <Search className="h-8 w-8" />,
+                title: "Smart Search",
+                description: "Upload photos or describe your item. Our AI instantly matches against our community database.",
+                color: "from-teal-500 to-cyan-400",
+                bgColor: "from-teal-50 to-cyan-50",
+              },
+              {
+                icon: <Globe className="h-8 w-8" />,
+                title: "Real-Time Updates",
+                description: "Get instant notifications when your item is found nearby. Location-based alerts keep you informed.",
+                color: "from-emerald-500 to-teal-400",
+                bgColor: "from-emerald-50 to-teal-50",
+              },
+              {
+                icon: <Lock className="h-8 w-8" />,
+                title: "Secure Recovery",
+                description: "Blockchain verification ensures authentic ownership. Safe meetup locations for secure item exchange.",
+                color: "from-cyan-500 to-blue-400",
+                bgColor: "from-cyan-50 to-blue-50",
+              },
+            ].map((feature, i) => (
+              <div key={i} className={`bg-gradient-to-br ${feature.bgColor} p-8 rounded-2xl hover:shadow-lg transition-all duration-300 border border-slate-100`}>
+                <div className={`inline-flex p-4 bg-gradient-to-br ${feature.color} rounded-xl mb-6 shadow-lg`}>
+                  {React.cloneElement(feature.icon, { className: "text-white" })}
+                </div>
+                <h3 className="text-xl font-bold text-slate-800 mb-4">{feature.title}</h3>
+                <p className="text-slate-600 leading-relaxed">{feature.description}</p>
               </div>
             ))}
           </div>
         </div>
 
-        {/* How It Works Section */}
-        <div className="mb-20 fade-in-section opacity-0 translate-y-10 transition-all duration-700">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-white mb-4">How Trace-It Works</h2>
-            <p className="text-slate-400 text-lg">Three simple steps to recover your lost items</p>
-          </div>
-          <div className="flex flex-col md:flex-row items-center justify-center space-y-8 md:space-y-0 md:space-x-8">
-            {steps.map((step, i) => (
-              <React.Fragment key={i}>
-                <div className="flex-shrink-0 w-80 bg-slate-800/30 backdrop-blur-xl p-8 rounded-3xl hover:bg-slate-800/40 transition-all border border-white/10 hover:border-white/20 transform hover:scale-105">
-                  <div className="flex items-center justify-center w-16 h-16 bg-gradient-to-br from-teal-500 to-cyan-400 rounded-2xl mb-6 mx-auto shadow-lg">
-                    {step.icon}
-                  </div>
-                  <h3 className="text-2xl font-semibold text-white mb-4 text-center">{step.label}</h3>
-                  <p className="text-slate-300 text-center leading-relaxed">{step.text}</p>
-                </div>
-                {i < steps.length - 1 && (
-                  <ArrowRight className="hidden md:block flex-shrink-0 text-slate-500 w-8 h-8" />
-                )}
-              </React.Fragment>
-            ))}
-          </div>
-        </div>
-
-        {/* Final CTA */}
-        <div className="text-center fade-in-section opacity-0 translate-y-10 transition-all duration-700">
-          <div className="bg-gradient-to-r from-teal-500/20 to-cyan-400/20 backdrop-blur-xl rounded-3xl p-12 border border-white/10">
-            <h2 className="text-4xl font-bold text-white mb-6">Ready to Get Started?</h2>
-            <p className="text-slate-300 text-lg mb-8 max-w-2xl mx-auto">
-              Join thousands of users who have successfully recovered their lost items with TraceIt.
+        {/* CTA Section */}
+        <div className="py-16 fade-in">
+          <div className="bg-gradient-to-r from-teal-500 to-cyan-400 rounded-3xl p-12 text-center text-white">
+            <h2 className="text-4xl font-bold mb-6">Ready to find what you've lost?</h2>
+            <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
+              Join our growing community and never lose hope of recovering your precious items again.
             </p>
             <Link
               to="/register"
-              className="inline-flex items-center justify-center px-10 py-5 text-lg font-medium text-white bg-gradient-to-r from-teal-500 to-cyan-400 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
+              className="inline-flex items-center px-10 py-4 bg-white text-teal-600 rounded-xl font-bold hover:shadow-xl transition-all duration-300 text-lg"
             >
-              <span>Start Your Free Trial</span>
-              <ArrowRight className="ml-3 w-6 h-6 transition-transform group-hover:translate-x-1" />
+              Get started for free
+              <ArrowRight className="ml-3 w-6 h-6" />
             </Link>
           </div>
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-700/50 relative z-10 bg-slate-900/50 backdrop-blur-xl">
-        <div className="container mx-auto px-4 py-12">
-          <div className="flex flex-col md:flex-row justify-between items-start space-y-8 md:space-y-0">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-gradient-to-br from-teal-500 to-cyan-400 rounded-xl">
-                <MapPin className="h-6 w-6 text-white" />
-              </div>
-              <span className="text-xl font-bold text-slate-300">TraceIt</span>
-            </div>
-            <div className="grid grid-cols-2 gap-8">
-              <div>
-                <h4 className="text-slate-300 font-medium mb-3">Product</h4>
-                <div className="space-y-2">
-                  <Link to="/features" className="block text-slate-400 hover:text-teal-400 transition-colors">
-                    Features
-                  </Link>
-                  <Link to="/security" className="block text-slate-400 hover:text-teal-400 transition-colors">
-                    Security
-                  </Link>
-                </div>
-              </div>
-              <div>
-                <h4 className="text-slate-300 font-medium mb-3">Company</h4>
-                <div className="space-y-2">
-                  <Link to="/about" className="block text-slate-400 hover:text-teal-400 transition-colors">
-                    About
-                  </Link>
-                  <Link to="/contact" className="block text-slate-400 hover:text-teal-400 transition-colors">
-                    Contact
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="border-t border-slate-700/50 mt-8 pt-8 text-center text-slate-400">
-            <p>&copy; 2025 TraceIt. All rights reserved. Built with ❤️ for the community.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
+
+      <style>{`
+        .fade-in {
+          opacity: 0;
+          transform: translateY(20px);
+          transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        .animate-fade-in {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      `}</style>
     </div>
   )
 }
